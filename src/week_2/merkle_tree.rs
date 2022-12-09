@@ -24,6 +24,11 @@ pub fn merge(left: impl AsRef<[u8]>, right: impl AsRef<[u8]>) -> String {
     hex::encode(hash)
 }
 
+struct MerkleeTreeProofNode {
+    data: String,
+    is_left: bool,
+}
+
 impl MerkleeTree {
     fn new(leaves: Vec<String>) -> Self {
         Self { leaves }
@@ -58,197 +63,326 @@ impl MerkleeTree {
 
         MerkleeTree::build_root(&new_level)
     }
+
+    fn get_proof(&self, idx: usize) -> Vec<MerkleeTreeProofNode> {
+        let hashed_leaves: Vec<String> = self.leaves.iter().map(keccak256).collect();
+
+        MerkleeTree::build_proof(idx, &hashed_leaves)
+    }
+
+    fn build_proof(idx: usize, level: &[String]) -> Vec<MerkleeTreeProofNode> {
+        let level_size = level.len();
+        let mut partial_proof = Vec::new();
+
+        if level_size == 1 {
+            return partial_proof;
+        }
+
+        let mut counter = 0;
+        let new_level: Vec<String> = level
+            .chunks(2)
+            .map(|chunk| {
+                if chunk.len() == 1 {
+                    return chunk.get(0).unwrap().clone();
+                }
+
+                let left = chunk.get(0).unwrap();
+                let right = chunk.get(1).unwrap();
+
+                if counter == idx || counter == idx.saturating_sub(1) {
+                    let is_target_at_left = idx % 2 == 0;
+
+                    let curr_proof_node = MerkleeTreeProofNode {
+                        data: if is_target_at_left {
+                            right.clone()
+                        } else {
+                            left.clone()
+                        },
+                        is_left: !is_target_at_left,
+                    };
+
+                    partial_proof.push(curr_proof_node);
+                }
+
+                counter += 2;
+                merge(left, right)
+            })
+            .collect();
+
+        partial_proof.append(MerkleeTree::build_proof(idx / 2, &new_level).as_mut());
+
+        partial_proof
+    }
 }
 
 mod test {
-    use super::{keccak256, merge, MerkleeTree};
 
-    #[test]
-    fn should_create_a_root_from_1_leaf() {
-        // Arrange
-        let data1 = String::from("A");
-        let data = vec![data1.clone()];
+    mod get_root {
+        use crate::week_2::merkle_tree::{keccak256, merge, MerkleeTree};
 
-        let expected_result = keccak256(data1);
+        #[test]
+        fn should_create_a_root_from_1_leaf() {
+            // Arrange
+            let data1 = String::from("A");
+            let data = vec![data1.clone()];
 
-        let tree = MerkleeTree::new(data);
+            let expected_result = keccak256(data1);
 
-        // Act
-        let root = tree.get_root();
+            let tree = MerkleeTree::new(data);
 
-        // Assert
-        assert_eq!(root, expected_result)
-    }
+            // Act
+            let root = tree.get_root();
 
-    #[test]
-    fn should_create_a_root_from_2_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data = vec![data1.clone(), data2.clone()];
+            // Assert
+            assert_eq!(root, expected_result)
+        }
 
-        let expected_result = merge(keccak256(data1), keccak256(data2));
+        #[test]
+        fn should_create_a_root_from_2_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data = vec![data1.clone(), data2.clone()];
 
-        let tree = MerkleeTree::new(data);
+            let expected_result = merge(keccak256(data1), keccak256(data2));
 
-        // Act
-        let root = tree.get_root();
+            let tree = MerkleeTree::new(data);
 
-        // Assert
-        assert_eq!(root, expected_result)
-    }
+            // Act
+            let root = tree.get_root();
 
-    #[test]
-    fn should_create_a_root_from_3_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data3 = String::from("C");
-        let data = vec![data1.clone(), data2.clone(), data3.clone()];
+            // Assert
+            assert_eq!(root, expected_result)
+        }
 
-        let expected_result = merge(merge(keccak256(data1), keccak256(data2)), keccak256(data3));
+        #[test]
+        fn should_create_a_root_from_3_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data = vec![data1.clone(), data2.clone(), data3.clone()];
 
-        let tree = MerkleeTree::new(data);
+            let expected_result =
+                merge(merge(keccak256(data1), keccak256(data2)), keccak256(data3));
 
-        // Act
-        let root = tree.get_root();
+            let tree = MerkleeTree::new(data);
 
-        // Assert
-        assert_eq!(root, expected_result)
-    }
+            // Act
+            let root = tree.get_root();
 
-    #[test]
-    fn should_create_a_root_from_4_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data3 = String::from("C");
-        let data4 = String::from("D");
-        let data = vec![data1.clone(), data2.clone(), data3.clone(), data4.clone()];
+            // Assert
+            assert_eq!(root, expected_result)
+        }
 
-        let expected_result = merge(
-            merge(keccak256(data1), keccak256(data2)),
-            merge(keccak256(data3), keccak256(data4)),
-        );
+        #[test]
+        fn should_create_a_root_from_4_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data = vec![data1.clone(), data2.clone(), data3.clone(), data4.clone()];
 
-        let tree = MerkleeTree::new(data);
-
-        // Act
-        let root = tree.get_root();
-
-        // Assert
-        assert_eq!(root, expected_result)
-    }
-
-    #[test]
-    fn should_create_a_root_from_5_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data3 = String::from("C");
-        let data4 = String::from("D");
-        let data5 = String::from("D");
-        let data = vec![
-            data1.clone(),
-            data2.clone(),
-            data3.clone(),
-            data4.clone(),
-            data5.clone(),
-        ];
-
-        let expected_result = merge(
-            merge(
+            let expected_result = merge(
                 merge(keccak256(data1), keccak256(data2)),
                 merge(keccak256(data3), keccak256(data4)),
-            ),
-            keccak256(data5),
-        );
+            );
 
-        let tree = MerkleeTree::new(data);
+            let tree = MerkleeTree::new(data);
 
-        // Act
-        let root = tree.get_root();
+            // Act
+            let root = tree.get_root();
 
-        // Assert
-        assert_eq!(root, expected_result)
+            // Assert
+            assert_eq!(root, expected_result)
+        }
+
+        #[test]
+        fn should_create_a_root_from_5_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data5 = String::from("D");
+            let data = vec![
+                data1.clone(),
+                data2.clone(),
+                data3.clone(),
+                data4.clone(),
+                data5.clone(),
+            ];
+
+            let expected_result = merge(
+                merge(
+                    merge(keccak256(data1), keccak256(data2)),
+                    merge(keccak256(data3), keccak256(data4)),
+                ),
+                keccak256(data5),
+            );
+
+            let tree = MerkleeTree::new(data);
+
+            // Act
+            let root = tree.get_root();
+
+            // Assert
+            assert_eq!(root, expected_result)
+        }
+
+        #[test]
+        fn should_create_a_root_from_7_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data5 = String::from("E");
+            let data6 = String::from("F");
+            let data7 = String::from("G");
+            let data = vec![
+                data1.clone(),
+                data2.clone(),
+                data3.clone(),
+                data4.clone(),
+                data5.clone(),
+                data6.clone(),
+                data7.clone(),
+            ];
+
+            let expected_result = merge(
+                merge(
+                    merge(keccak256(data1), keccak256(data2)),
+                    merge(keccak256(data3), keccak256(data4)),
+                ),
+                merge(merge(keccak256(data5), keccak256(data6)), keccak256(data7)),
+            );
+
+            let tree = MerkleeTree::new(data);
+
+            // Act
+            let root = tree.get_root();
+
+            // Assert
+            assert_eq!(root, expected_result)
+        }
+
+        #[test]
+        fn should_create_a_root_from_8_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data5 = String::from("E");
+            let data6 = String::from("F");
+            let data7 = String::from("G");
+            let data8 = String::from("H");
+            let data = vec![
+                data1.clone(),
+                data2.clone(),
+                data3.clone(),
+                data4.clone(),
+                data5.clone(),
+                data6.clone(),
+                data7.clone(),
+                data8.clone(),
+            ];
+
+            let expected_result = merge(
+                merge(
+                    merge(keccak256(data1), keccak256(data2)),
+                    merge(keccak256(data3), keccak256(data4)),
+                ),
+                merge(
+                    merge(keccak256(data5), keccak256(data6)),
+                    merge(keccak256(data7), keccak256(data8)),
+                ),
+            );
+
+            let tree = MerkleeTree::new(data);
+
+            // Act
+            let root = tree.get_root();
+
+            // Assert
+            assert_eq!(root, expected_result)
+        }
     }
 
-    #[test]
-    fn should_create_a_root_from_7_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data3 = String::from("C");
-        let data4 = String::from("D");
-        let data5 = String::from("E");
-        let data6 = String::from("F");
-        let data7 = String::from("G");
-        let data = vec![
-            data1.clone(),
-            data2.clone(),
-            data3.clone(),
-            data4.clone(),
-            data5.clone(),
-            data6.clone(),
-            data7.clone(),
-        ];
+    mod get_proof {
+        use crate::week_2::merkle_tree::{keccak256, merge, MerkleeTree};
 
-        let expected_result = merge(
-            merge(
-                merge(keccak256(data1), keccak256(data2)),
-                merge(keccak256(data3), keccak256(data4)),
-            ),
-            merge(merge(keccak256(data5), keccak256(data6)), keccak256(data7)),
-        );
+        #[test]
+        fn should_correctly_build_the_proof_with_7_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data5 = String::from("E");
+            let data6 = String::from("F");
+            let data7 = String::from("G");
+            let data = vec![data1, data2, data3, data4, data5, data6, data7];
 
-        let tree = MerkleeTree::new(data);
+            let tree = MerkleeTree::new(data.clone());
+            let root = tree.get_root();
 
-        // Act
-        let root = tree.get_root();
+            // Act
+            for (idx, leaf) in data.iter().enumerate() {
+                let proof = tree.get_proof(idx);
 
-        // Assert
-        assert_eq!(root, expected_result)
-    }
+                let maybe_root: String =
+                    proof
+                        .iter()
+                        .fold(keccak256(leaf.clone()), |acc, proof_node| {
+                            if proof_node.is_left {
+                                merge(&proof_node.data, acc)
+                            } else {
+                                merge(acc, &proof_node.data)
+                            }
+                        });
 
-    #[test]
-    fn should_create_a_root_from_8_leaves() {
-        // Arrange
-        let data1 = String::from("A");
-        let data2 = String::from("B");
-        let data3 = String::from("C");
-        let data4 = String::from("D");
-        let data5 = String::from("E");
-        let data6 = String::from("F");
-        let data7 = String::from("G");
-        let data8 = String::from("H");
-        let data = vec![
-            data1.clone(),
-            data2.clone(),
-            data3.clone(),
-            data4.clone(),
-            data5.clone(),
-            data6.clone(),
-            data7.clone(),
-            data8.clone(),
-        ];
+                // Assert
+                assert_eq!(maybe_root, root)
+            }
+        }
 
-        let expected_result = merge(
-            merge(
-                merge(keccak256(data1), keccak256(data2)),
-                merge(keccak256(data3), keccak256(data4)),
-            ),
-            merge(
-                merge(keccak256(data5), keccak256(data6)),
-                merge(keccak256(data7), keccak256(data8)),
-            ),
-        );
+        #[test]
+        fn should_correctly_build_the_proof_with_8_leaves() {
+            // Arrange
+            let data1 = String::from("A");
+            let data2 = String::from("B");
+            let data3 = String::from("C");
+            let data4 = String::from("D");
+            let data5 = String::from("E");
+            let data6 = String::from("F");
+            let data7 = String::from("G");
+            let data8 = String::from("H");
+            let data = vec![data1, data2, data3, data4, data5, data6, data7, data8];
 
-        let tree = MerkleeTree::new(data);
+            let tree = MerkleeTree::new(data.clone());
+            let root = tree.get_root();
 
-        // Act
-        let root = tree.get_root();
+            // Act
+            for (idx, leaf) in data.iter().enumerate() {
+                let proof = tree.get_proof(idx);
 
-        // Assert
-        assert_eq!(root, expected_result)
+                let maybe_proof: String =
+                    proof
+                        .iter()
+                        .fold(keccak256(leaf.clone()), |acc, proof_node| {
+                            if proof_node.is_left {
+                                merge(&proof_node.data, acc)
+                            } else {
+                                merge(acc, &proof_node.data)
+                            }
+                        });
+
+                // Assert
+                assert_eq!(maybe_proof, root)
+            }
+        }
     }
 }
