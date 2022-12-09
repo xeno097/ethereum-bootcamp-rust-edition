@@ -1,6 +1,6 @@
 # Ethereum Bootcamp Rust Edition
 
-This repository holds the exercises done for [Alchemy University Ethereum Bootcamp](https://university.alchemy.com/home).
+This repository holds the exercises' solutions for [Alchemy University Ethereum Bootcamp](https://university.alchemy.com/home).
 
 The course exercises are written in javascript but I decided to redo them in Rust to learn the language.
 
@@ -18,4 +18,4 @@ The exercises are grouped by week and module under the `./src` folder. Modules' 
 
 ## Future Plans
 
-As I improve my knoledge of Rust, I plan to improve previous exercises.
+As I improve my knoledge of Rust, I plan to improve/update previous exercises.
