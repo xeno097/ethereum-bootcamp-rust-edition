@@ -312,7 +312,17 @@ mod test {
     }
 
     mod get_proof {
-        use crate::week_2::merkle_tree::{keccak256, merge, MerkleeTree};
+        use crate::week_2::merkle_tree::{keccak256, merge, MerkleeTree, MerkleeTreeProofNode};
+
+        fn build_root_from_proof(leaf: String, proof: Vec<MerkleeTreeProofNode>) -> String {
+            proof.iter().fold(keccak256(leaf), |acc, proof_node| {
+                if proof_node.is_left {
+                    merge(&proof_node.data, acc)
+                } else {
+                    merge(acc, &proof_node.data)
+                }
+            })
+        }
 
         #[test]
         fn should_correctly_build_the_proof_with_7_leaves() {
@@ -333,19 +343,8 @@ mod test {
             for (idx, leaf) in data.iter().enumerate() {
                 let proof = tree.get_proof(idx);
 
-                let maybe_root: String =
-                    proof
-                        .iter()
-                        .fold(keccak256(leaf.clone()), |acc, proof_node| {
-                            if proof_node.is_left {
-                                merge(&proof_node.data, acc)
-                            } else {
-                                merge(acc, &proof_node.data)
-                            }
-                        });
-
                 // Assert
-                assert_eq!(maybe_root, root)
+                assert_eq!(build_root_from_proof(leaf.clone(), proof), root)
             }
         }
 
@@ -369,19 +368,8 @@ mod test {
             for (idx, leaf) in data.iter().enumerate() {
                 let proof = tree.get_proof(idx);
 
-                let maybe_proof: String =
-                    proof
-                        .iter()
-                        .fold(keccak256(leaf.clone()), |acc, proof_node| {
-                            if proof_node.is_left {
-                                merge(&proof_node.data, acc)
-                            } else {
-                                merge(acc, &proof_node.data)
-                            }
-                        });
-
                 // Assert
-                assert_eq!(maybe_proof, root)
+                assert_eq!(build_root_from_proof(leaf.clone(), proof), root)
             }
         }
     }
