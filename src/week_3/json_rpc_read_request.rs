@@ -15,7 +15,7 @@ struct Block {
 }
 
 fn get_block_by_block_number(block_number: &str) -> JsonRpcResponse<Block> {
-    let url = std::env::var("RPC_URL").expect("RPC_URL not set");
+    let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
 
     let client = reqwest::blocking::Client::new();
 
