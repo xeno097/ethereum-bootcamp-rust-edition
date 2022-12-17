@@ -26,7 +26,7 @@ fn get_wallet(private_key: Option<&str>) -> Wallet<SigningKey> {
 async fn send_ether(
     wallet: &Wallet<SigningKey>,
     provider: &Provider<Http>,
-    amount: i32,
+    amount: i128,
     to: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let to = to
@@ -38,6 +38,10 @@ async fn send_ether(
     wallet.sign_transaction(&tx).await?;
     provider.send_transaction(tx, None).await?;
 
+    Ok(())
+}
+
+async fn mine_block(provider: &Provider<Http>) -> Result<(), Box<dyn Error>> {
     let _: String = provider.request("evm_mine", ()).await?;
 
     Ok(())
@@ -168,7 +172,9 @@ mod tests {
 
         use ethers::{abi::Address, providers::Middleware, types::U256};
 
-        use crate::week_3::json_rpc::{get_nonce, get_provider, get_wallet, send_ether};
+        use crate::week_3::json_rpc::{
+            get_nonce, get_provider, get_wallet, mine_block, send_ether,
+        };
 
         #[ignore]
         #[tokio::test]
@@ -186,6 +192,8 @@ mod tests {
 
             send_ether(&wallet, &provider, 1, None).await?;
 
+            mine_block(&provider).await?;
+
             // Act
             let res = get_nonce(&provider, address).await;
 
@@ -197,151 +205,73 @@ mod tests {
     }
 
     mod get_total_transactions {
-        use crate::week_3::json_rpc::{get_provider, get_total_transactions};
+        use std::error::Error;
 
-        // const ADDRESS = "0x5409ED021D9299bf6814279A6A1411A7e866A631";
-        // function runTransaction() {
-        //     return provider.send({
-        //         id: 1,
-        //         jsonrpc: "2.0",
-        //         method: "eth_sendTransaction",
-        //         params: [{ from: ADDRESS, to: "0xd46e8dd67c5d32be8058bb8eb970870f07244567", value: 0x1 }]
-        //     });
-        // }
+        use ethers::{
+            providers::{Http, Middleware, Provider},
+            signers::Wallet,
+        };
+        use k256::ecdsa::SigningKey;
 
-        // function mineBlock() {
-        //     return provider.send({
-        //         id: 1,
-        //         jsonrpc: "2.0",
-        //         method: "evm_mine",
-        //     });
-        // }
+        use crate::week_3::json_rpc::{
+            get_provider, get_total_transactions, get_wallet, mine_block, send_ether,
+        };
 
-        // describe('getTotalTransactions', () => {
-        //     before(async () => {
-        //         await provider.send({
-        //             id: 1,
-        //             jsonrpc: "2.0",
-        //             method: "miner_stop",
-        //         });
-        //     });
-
-        //     describe('on the first block', () => {
-        //         before(mineBlock);
-
-        //         it('should return zero total transactions', async () => {
-        //             const length = await getTotalTransactions(1);
-        //             assert.equal(length, 0);
-        //         });
-        //     });
-
-        //     describe('on the second block', () => {
-        //         before(async () => {
-        //             await runTransaction();
-        //             await mineBlock();
-        //         });
-
-        //         it('should return one total transactions', async () => {
-        //             const length = await getTotalTransactions(2);
-        //             assert.equal(length, 1);
-        //         });
-        //     });
-
-        //     describe('on the third block', () => {
-        //         before(async () => {
-        //             for (let i = 0; i < 5; i++) {
-        //                 await runTransaction();
-        //             }
-        //             await mineBlock();
-        //         });
-
-        //         it('should return five total transactions', async () => {
-        //             const length = await getTotalTransactions(3);
-        //             assert.equal(length, 5);
-        //         });
-        //     });
-
-        //     describe('on the 11th block', () => {
-        //         before(async () => {
-        //             // mine blocks 4-10
-        //             for (let i = 0; i < 7; i++) {
-        //                 await mineBlock();
-        //             }
-        //             for (let i = 0; i < 3; i++) {
-        //                 await runTransaction();
-        //             }
-        //             await mineBlock();
-        //         });
-
-        //         it('should return three total transactions', async () => {
-        //             const length = await getTotalTransactions(11);
-        //             assert.equal(length, 3);
-        //         });
-        //     });
-        // });
-
-        #[ignore]
-        #[tokio::test]
-        async fn should_get_the_number_of_transactions() {
+        async fn test_get_total_transactions(
+            provider: &Provider<Http>,
+            wallet: &Wallet<SigningKey>,
+            num_transactions: i128,
+        ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
+            for _ in 0..num_transactions {
+                send_ether(wallet, provider, 1, None).await?;
+            }
+
+            mine_block(provider).await?;
+
+            let current_block_number = provider.get_block_number().await?;
 
             // Act
-            let res = get_total_transactions(&provider, "0x0").await;
-
-            println!("{:#?}", res);
+            let res = get_total_transactions(provider, &current_block_number.to_string()).await;
 
             // Assert
             assert!(res.is_ok());
-            assert_eq!(res.unwrap(), 0)
+            assert_eq!(res.unwrap(), num_transactions);
+            Ok(())
         }
 
-        // TODO add more tests with blocks that actually have transactions
+        #[ignore]
+        #[tokio::test]
+        async fn should_get_the_expected_number_of_total_transactions() -> Result<(), Box<dyn Error>>
+        {
+            // Arrange
+            let provider = get_provider();
+            let wallet = get_wallet(None);
+
+            let transactions_num = vec![0, 1, 3, 5, 11];
+
+            for transaction_num in transactions_num {
+                test_get_total_transactions(&provider, &wallet, transaction_num).await?
+            }
+
+            Ok(())
+        }
     }
 
     mod get_total_balance {
-        // const addresses = [
-        //     '0x5409ed021d9299bf6814279a6a1411a7e866a631',
-        //     '0xebbe46f475db84e70313592eb4f94df73043c118',
-        //     '0xd4d38fc5fd03a9beba9e9a41573ef8de75c2784c',
-        //     '0xec4a61ce697253baa1088b2ea9112b9483098e64',
-        //     '0xfbf1d566853edc65cdeda8e22975ca1ebfc4ed38'
-        // ];
-
-        // describe('getTotalBalance', () => {
-        //     it('should find the total balance of all the addresses', async () => {
-        //         const totalBalance = await getTotalBalance(addresses);
-        //         assert.equal(totalBalance, "15".padEnd(19, "0"));
-        //     });
-        // });
-
-        // const privateKeys = [
-        //     "0xf2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d",
-        //     "0x636fe84c364a5d5a222c3651a49d0c243e7eaeb4b3745aa0ae1307ccf6f1ee01",
-        //     "0xb262a68a6b50fc6bd90c8f85ede7fee3e77169a20b4baaada9d5ba5a6b0e602b",
-        //     "0x309d6fae9d3c1f3d96764fbb7482feb733809fa0454077815cc55a60380e4d7e",
-        //     "0xfcfa090d848b97a0b6fb86d5e40ed456323cc96cf61211e2016e24bb577e88e3"
-        // ]
-
-        // const accounts = privateKeys.map((secretKey, i) => ({
-        //     balance: (i + 1).toString().padEnd(18, "0"),
-        //     secretKey
-        // }));
-
-        // const provider = ganache.provider({ accounts });
-
-        // provider.send = promisfy(provider.send);
-
-        // module.exports = provider;
+        use std::error::Error;
 
         use ethers::types::U256;
 
-        use crate::week_3::json_rpc::{get_provider, get_total_balance};
+        use crate::week_3::json_rpc::{
+            get_provider, get_total_balance, get_wallet, mine_block, send_ether,
+        };
 
         #[tokio::test]
-        async fn should_get_the_total_balance_of_the_addresses() {
+        async fn should_get_the_total_balance_of_the_addresses() -> Result<(), Box<dyn Error>> {
             // Arrange
             let provider = get_provider();
+            let wallet = get_wallet(None);
 
             let addresses = vec![
                 "0x5409ed021d9299bf6814279a6a1411a7e866a631",
@@ -351,12 +281,28 @@ mod tests {
                 "0xfbf1d566853edc65cdeda8e22975ca1ebfc4ed38",
             ];
 
+            let expected_total = 15 * (10 ^ 18);
+
+            for (idx, address) in addresses.iter().enumerate() {
+                send_ether(
+                    &wallet,
+                    &provider,
+                    ((idx as i128) + 1) * (10 ^ 18),
+                    Some(address),
+                )
+                .await?;
+            }
+
+            mine_block(&provider).await?;
+
             // Act
             let res = get_total_balance(&provider, addresses).await;
 
             // Assert
             assert!(res.is_ok());
-            assert_eq!(res.unwrap(), U256::from(0))
+            assert_eq!(res.unwrap(), U256::from(expected_total));
+
+            Ok(())
         }
     }
 }
