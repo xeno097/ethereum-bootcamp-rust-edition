@@ -1,51 +1,10 @@
-use std::{convert::TryFrom, error::Error, str::FromStr};
+use std::{error::Error, str::FromStr};
 
 use ethers::{
-    abi::Address,
     core::types::Block,
-    providers::{Http, Middleware, Provider},
-    signers::{LocalWallet, Signer, Wallet},
-    types::{TransactionRequest, U256},
+    providers::{Http, Provider},
+    types::U256,
 };
-use k256::ecdsa::SigningKey;
-
-#[allow(dead_code)]
-fn get_provider() -> Provider<Http> {
-    let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
-
-    Provider::<Http>::try_from(url).expect("Could not create rpc provider")
-}
-
-fn get_wallet(private_key: Option<&str>) -> Wallet<SigningKey> {
-    private_key
-        .unwrap_or("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
-        .parse::<LocalWallet>()
-        .expect("Could not create wallet with given private key")
-}
-
-async fn send_ether(
-    wallet: &Wallet<SigningKey>,
-    provider: &Provider<Http>,
-    amount: i128,
-    to: Option<&str>,
-) -> Result<(), Box<dyn Error>> {
-    let to = to
-        .unwrap_or("0xd46e8dd67c5d32be8058bb8eb970870f07244567")
-        .parse::<Address>()?;
-
-    let tx = TransactionRequest::new().to(to).value(amount).into();
-
-    wallet.sign_transaction(&tx).await?;
-    provider.send_transaction(tx, None).await?;
-
-    Ok(())
-}
-
-async fn mine_block(provider: &Provider<Http>) -> Result<(), Box<dyn Error>> {
-    let _: String = provider.request("evm_mine", ()).await?;
-
-    Ok(())
-}
 
 #[allow(dead_code)]
 async fn get_block_number(provider: &Provider<Http>) -> Result<String, Box<dyn Error>> {
@@ -110,7 +69,7 @@ async fn get_total_balance(
     Ok(sum)
 }
 
-// Note: This tests must be run one by one or sequentially as running them in parallel can result in unexpected behaviour
+// Note: These tests must be run one by one or sequentially as running them in parallel can result in unexpected behaviour
 #[cfg(test)]
 mod tests {
 
@@ -119,13 +78,13 @@ mod tests {
 
         use ethers::{providers::Middleware, types::U64};
 
-        use crate::week_3::json_rpc::{get_block_number, get_provider};
+        use crate::week_3::{json_rpc::get_block_number, testing_utils};
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_latest_block_number() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
+            let provider = testing_utils::get_provider();
 
             let current_block_number = provider.get_block_number().await?;
             let expected_block_number = current_block_number.checked_add(U64::from(1)).unwrap();
@@ -145,13 +104,13 @@ mod tests {
     mod get_balance {
         use std::error::Error;
 
-        use crate::week_3::json_rpc::{get_balance, get_provider};
+        use crate::week_3::{json_rpc::get_balance, testing_utils};
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_address_balance() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
+            let provider = testing_utils::get_provider();
             let address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 
             // 10000 * 10^18 ETH
@@ -172,17 +131,15 @@ mod tests {
 
         use ethers::{abi::Address, providers::Middleware, types::U256};
 
-        use crate::week_3::json_rpc::{
-            get_nonce, get_provider, get_wallet, mine_block, send_ether,
-        };
+        use crate::week_3::{json_rpc::get_nonce, testing_utils};
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_account_nonce() -> Result<(), Box<dyn Error>> {
             // Arrange
             let address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
-            let provider = get_provider();
-            let wallet = get_wallet(None);
+            let provider = testing_utils::get_provider();
+            let wallet = testing_utils::get_wallet(None);
 
             let current_account_nonce = provider
                 .get_transaction_count(address.parse::<Address>()?, None)
@@ -190,9 +147,9 @@ mod tests {
 
             let expected_nonce = current_account_nonce.add(1);
 
-            send_ether(&wallet, &provider, 1, None).await?;
+            testing_utils::send_ether(&wallet, &provider, 1, None).await?;
 
-            mine_block(&provider).await?;
+            testing_utils::mine_block(&provider).await?;
 
             // Act
             let res = get_nonce(&provider, address).await;
@@ -213,9 +170,7 @@ mod tests {
         };
         use k256::ecdsa::SigningKey;
 
-        use crate::week_3::json_rpc::{
-            get_provider, get_total_transactions, get_wallet, mine_block, send_ether,
-        };
+        use crate::week_3::{json_rpc::get_total_transactions, testing_utils};
 
         async fn test_get_total_transactions(
             provider: &Provider<Http>,
@@ -224,10 +179,10 @@ mod tests {
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
             for _ in 0..num_transactions {
-                send_ether(wallet, provider, 1, None).await?;
+                testing_utils::send_ether(wallet, provider, 1, None).await?;
             }
 
-            mine_block(provider).await?;
+            testing_utils::mine_block(provider).await?;
 
             let current_block_number = provider.get_block_number().await?;
 
@@ -245,8 +200,8 @@ mod tests {
         async fn should_get_the_expected_number_of_total_transactions() -> Result<(), Box<dyn Error>>
         {
             // Arrange
-            let provider = get_provider();
-            let wallet = get_wallet(None);
+            let provider = testing_utils::get_provider();
+            let wallet = testing_utils::get_wallet(None);
 
             let transactions_num = vec![0, 1, 3, 5, 11];
 
@@ -263,15 +218,13 @@ mod tests {
 
         use ethers::types::U256;
 
-        use crate::week_3::json_rpc::{
-            get_provider, get_total_balance, get_wallet, mine_block, send_ether,
-        };
+        use crate::week_3::{json_rpc::get_total_balance, testing_utils};
 
         #[tokio::test]
         async fn should_get_the_total_balance_of_the_addresses() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let wallet = get_wallet(None);
+            let provider = testing_utils::get_provider();
+            let wallet = testing_utils::get_wallet(None);
 
             let addresses = vec![
                 "0x5409ed021d9299bf6814279a6a1411a7e866a631",
@@ -284,7 +237,7 @@ mod tests {
             let expected_total = 15 * (10 ^ 18);
 
             for (idx, address) in addresses.iter().enumerate() {
-                send_ether(
+                testing_utils::send_ether(
                     &wallet,
                     &provider,
                     ((idx as i128) + 1) * (10 ^ 18),
@@ -293,7 +246,7 @@ mod tests {
                 .await?;
             }
 
-            mine_block(&provider).await?;
+            testing_utils::mine_block(&provider).await?;
 
             // Act
             let res = get_total_balance(&provider, addresses).await;
