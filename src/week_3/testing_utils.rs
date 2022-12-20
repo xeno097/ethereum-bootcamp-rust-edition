@@ -8,6 +8,11 @@ use ethers::{
 };
 use k256::ecdsa::SigningKey;
 
+pub const DEFAULT_ACCOUNT_PRIVATE_KEY: &str =
+    "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+
+pub const DEFAULT_ACCOUNT_ADDRESS: &str = "0xd46e8dd67c5d32be8058bb8eb970870f07244567";
+
 #[allow(dead_code)]
 pub fn get_provider() -> Provider<Http> {
     let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
@@ -18,7 +23,7 @@ pub fn get_provider() -> Provider<Http> {
 #[allow(dead_code)]
 pub fn get_wallet(private_key: Option<&str>) -> Wallet<SigningKey> {
     private_key
-        .unwrap_or("ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+        .unwrap_or(DEFAULT_ACCOUNT_PRIVATE_KEY)
         .parse::<LocalWallet>()
         .expect("Could not create wallet with given private key")
 }
@@ -30,9 +35,7 @@ pub async fn send_ether(
     amount: i128,
     to: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
-    let to = to
-        .unwrap_or("0xd46e8dd67c5d32be8058bb8eb970870f07244567")
-        .parse::<Address>()?;
+    let to = to.unwrap_or(DEFAULT_ACCOUNT_ADDRESS).parse::<Address>()?;
 
     let tx = TransactionRequest::new().to(to).value(amount).into();
 
