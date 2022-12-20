@@ -2,16 +2,17 @@ use std::{convert::TryFrom, error::Error};
 
 use ethers::{
     abi::Address,
+    prelude::SignerMiddleware,
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer, Wallet},
-    types::TransactionRequest,
+    types::{BlockId, BlockNumber, TransactionRequest},
 };
 use k256::ecdsa::SigningKey;
 
 pub const DEFAULT_ACCOUNT_PRIVATE_KEY: &str =
     "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-pub const DEFAULT_ACCOUNT_ADDRESS: &str = "0xd46e8dd67c5d32be8058bb8eb970870f07244567";
+pub const DEFAULT_ACCOUNT_ADDRESS: &str = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 
 #[allow(dead_code)]
 pub fn get_provider() -> Provider<Http> {
@@ -37,10 +38,46 @@ pub async fn send_ether(
 ) -> Result<(), Box<dyn Error>> {
     let to = to.unwrap_or(DEFAULT_ACCOUNT_ADDRESS).parse::<Address>()?;
 
-    let tx = TransactionRequest::new().to(to).value(amount).into();
+    let nonce = provider
+        .get_transaction_count(
+            wallet.address(),
+            Some(BlockId::Number(BlockNumber::Pending)),
+        )
+        .await?;
 
-    wallet.sign_transaction(&tx).await?;
+    let tx = TransactionRequest::new()
+        .to(to)
+        .value(amount)
+        .nonce(nonce)
+        .from(wallet.address());
+
     provider.send_transaction(tx, None).await?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub async fn send_ether_v2(
+    client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+    amount: i128,
+    to: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let to = to.unwrap_or(DEFAULT_ACCOUNT_ADDRESS).parse::<Address>()?;
+
+    let nonce = client
+        .get_transaction_count(
+            client.address(),
+            Some(BlockId::Number(BlockNumber::Pending)),
+        )
+        .await?;
+
+    let tx = TransactionRequest::new()
+        .to(to)
+        .value(amount)
+        .nonce(nonce)
+        .from(client.address());
+
+    client.send_transaction(tx, None).await?;
 
     Ok(())
 }
