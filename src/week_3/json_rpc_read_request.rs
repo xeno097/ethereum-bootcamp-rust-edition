@@ -1,7 +1,7 @@
 use reqwest::header::CONTENT_TYPE;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct JsonRpcResponse<T> {
     jsonrpc: String,
     id: u8,
@@ -9,15 +9,16 @@ struct JsonRpcResponse<T> {
     error: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Block {
     number: String,
 }
 
-fn get_block_by_block_number(block_number: &str) -> JsonRpcResponse<Block> {
+#[allow(dead_code)]
+async fn get_block_by_block_number(block_number: &str) -> JsonRpcResponse<Block> {
     let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
 
-    let client = reqwest::blocking::Client::new();
+    let client = reqwest::Client::new();
 
     let raw_request = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["{block_number}",false]}}"#
@@ -28,8 +29,10 @@ fn get_block_by_block_number(block_number: &str) -> JsonRpcResponse<Block> {
         .header(CONTENT_TYPE, "application/json")
         .body(raw_request)
         .send()
+        .await
         .unwrap()
         .json()
+        .await
         .unwrap()
 }
 
@@ -37,13 +40,13 @@ fn get_block_by_block_number(block_number: &str) -> JsonRpcResponse<Block> {
 mod tests {
     use super::get_block_by_block_number;
 
-    #[test]
-    fn should_get_the_block_with_the_given_number() {
+    #[tokio::test]
+    async fn should_get_the_block_with_the_given_number() {
         // Arrange
         let block_number = "0xb443".to_string();
 
         // Act
-        let res = get_block_by_block_number(&block_number);
+        let res = get_block_by_block_number(&block_number).await;
 
         // Assert
         assert!(res.result.is_some());
