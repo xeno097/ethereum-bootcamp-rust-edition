@@ -41,7 +41,7 @@ mod tests {
     use ethers::types::H160;
     use k256::ecdsa::SigningKey;
 
-    use crate::week_3::testing_utils::{self, send_ether, send_ether_v2};
+    use crate::week_3::testing_utils::{self, send_ether};
     use crate::week_3::where_is_the_ether::find_ether;
 
     fn generate_fake_address() -> H160 {
@@ -50,14 +50,14 @@ mod tests {
         wallet.address()
     }
 
-    async fn dispacth_ether_n_times(
+    async fn dispatch_ether_n_times(
         client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
         addresses: &mut Vec<String>,
         times: i32,
     ) -> Result<(), Box<dyn Error>> {
         for _ in 0..times {
             let address = hex::encode(generate_fake_address());
-            send_ether_v2(client, 5 * (10 ^ 17), Some(&address)).await?;
+            send_ether(client, 5 * (10 ^ 17), Some(&address)).await?;
             addresses.push(address);
         }
 
@@ -69,19 +69,18 @@ mod tests {
     #[tokio::test]
     async fn should_find_all_the_addresses() -> Result<(), Box<dyn Error>> {
         // Arrange
-        let provider = testing_utils::get_provider();
-        let wallet = testing_utils::get_wallet(None);
-        let client = SignerMiddleware::new(provider.clone(), wallet.with_chain_id(31337_u64));
+        let client = testing_utils::get_provider_with_signer(None, None);
+        let provider = client.inner();
 
         let mut addresses = Vec::new();
 
-        dispacth_ether_n_times(&client, &mut addresses, 3).await?;
-        dispacth_ether_n_times(&client, &mut addresses, 7).await?;
-        dispacth_ether_n_times(&client, &mut addresses, 10).await?;
+        dispatch_ether_n_times(&client, &mut addresses, 3).await?;
+        dispatch_ether_n_times(&client, &mut addresses, 7).await?;
+        dispatch_ether_n_times(&client, &mut addresses, 10).await?;
 
         // Act
         let mut found_addresses =
-            find_ether(&provider, "f39fd6e51aad88f6f4ce6ab8827279cfffb92266").await?;
+            find_ether(provider, "f39fd6e51aad88f6f4ce6ab8827279cfffb92266").await?;
 
         // Assert
         found_addresses.sort();

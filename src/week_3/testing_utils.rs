@@ -30,34 +30,20 @@ pub fn get_wallet(private_key: Option<&str>) -> Wallet<SigningKey> {
 }
 
 #[allow(dead_code)]
-pub async fn send_ether(
-    wallet: &Wallet<SigningKey>,
-    provider: &Provider<Http>,
-    amount: i128,
-    to: Option<&str>,
-) -> Result<(), Box<dyn Error>> {
-    let to = to.unwrap_or(DEFAULT_ACCOUNT_ADDRESS).parse::<Address>()?;
+pub fn get_provider_with_signer(
+    private_key: Option<&str>,
+    chain_id: Option<u64>,
+) -> SignerMiddleware<Provider<Http>, Wallet<SigningKey>> {
+    let provider = get_provider();
+    let wallet = get_wallet(private_key);
 
-    let nonce = provider
-        .get_transaction_count(
-            wallet.address(),
-            Some(BlockId::Number(BlockNumber::Pending)),
-        )
-        .await?;
+    let chain_id = chain_id.unwrap_or(31337_u64);
 
-    let tx = TransactionRequest::new()
-        .to(to)
-        .value(amount)
-        .nonce(nonce)
-        .from(wallet.address());
-
-    provider.send_transaction(tx, None).await?;
-
-    Ok(())
+    SignerMiddleware::new(provider, wallet.with_chain_id(chain_id))
 }
 
 #[allow(dead_code)]
-pub async fn send_ether_v2(
+pub async fn send_ether(
     client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     amount: i128,
     to: Option<&str>,

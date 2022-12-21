@@ -51,7 +51,6 @@ async fn send_ether<'client>(
     value: i128,
     to: &str,
 ) -> Result<PendingTransaction<'client, Http>, Box<dyn Error>> {
-    // craft the transaction
     let sender_address = client.address();
     let nonce = client
         .get_transaction_count(sender_address, Some(BlockId::Number(BlockNumber::Pending)))
@@ -62,7 +61,6 @@ async fn send_ether<'client>(
         .value(value)
         .nonce(nonce);
 
-    // send it!
     let pending_tx = client.send_transaction(tx, None).await?;
 
     Ok(pending_tx)
@@ -70,7 +68,6 @@ async fn send_ether<'client>(
 
 #[allow(dead_code)]
 async fn find_my_balance(provider: &Provider<Http>, address: &str) -> Result<U256, Box<dyn Error>> {
-    // craft the transaction
     let address = address.parse::<Address>()?;
 
     let balance = provider.get_balance(address, None).await?;
@@ -200,19 +197,18 @@ mod tests {
     mod send_ether {
         use std::{error::Error, ops::Add};
 
-        use ethers::{prelude::SignerMiddleware, providers::Middleware, signers::Signer};
+        use ethers::providers::Middleware;
 
         use crate::week_3::{intro_to_ethers::send_ether, testing_utils};
 
+        #[ignore]
         #[tokio::test]
         async fn should_resolve_with_a_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
+            let client = testing_utils::get_provider_with_signer(None, None);
+            let provider = client.inner();
 
-            let wallet = testing_utils::get_wallet(None).with_chain_id(31337_u64);
-            let expected_from = wallet.address();
-
-            let client = SignerMiddleware::new(provider.clone(), wallet);
+            let expected_from = client.address();
 
             // Act
             let tx = send_ether(
@@ -222,7 +218,7 @@ mod tests {
             )
             .await?;
 
-            testing_utils::mine_block(&provider).await?;
+            testing_utils::mine_block(provider).await?;
 
             let receipt = tx.await?.unwrap();
 
@@ -235,16 +231,15 @@ mod tests {
             Ok(())
         }
 
+        #[ignore]
         #[tokio::test]
         async fn should_get_mined() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
-            let wallet = testing_utils::get_wallet(None).with_chain_id(31337_u64);
+            let client = testing_utils::get_provider_with_signer(None, None);
+            let provider = client.inner();
 
             let current_block_number = provider.get_block_number().await?;
             let expected_block_number = current_block_number + 1;
-
-            let client = SignerMiddleware::new(provider.clone(), wallet);
 
             // Act
             let tx = send_ether(
@@ -254,7 +249,7 @@ mod tests {
             )
             .await?;
 
-            testing_utils::mine_block(&provider).await?;
+            testing_utils::mine_block(provider).await?;
 
             let receipt = tx.await?.unwrap();
 
@@ -263,23 +258,19 @@ mod tests {
             Ok(())
         }
 
+        #[ignore]
         #[tokio::test]
         async fn should_correctly_track_the_nonce() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
-            let wallet = testing_utils::get_wallet(None).with_chain_id(31337_u64);
+            let client = testing_utils::get_provider_with_signer(None, None);
+            let provider = client.inner();
 
-            let sender_address = wallet.address();
-
-            let current_account_nonce = provider
-                .get_transaction_count(wallet.address(), None)
-                .await?;
+            let sender_address = client.address();
+            let current_account_nonce =
+                provider.get_transaction_count(sender_address, None).await?;
             let expected_account_nonce = current_account_nonce.add(3);
 
-            let client = SignerMiddleware::new(provider.clone(), wallet);
-
             // Act
-
             for _ in 0..3 {
                 let tx = send_ether(
                     &client,
@@ -288,7 +279,7 @@ mod tests {
                 )
                 .await?;
 
-                testing_utils::mine_block(&provider).await?;
+                testing_utils::mine_block(provider).await?;
 
                 let _ = tx.await?.unwrap();
             }
@@ -304,18 +295,21 @@ mod tests {
     mod get_balance {
         use std::error::Error;
 
-        use ethers::{signers::Signer, types::U256};
+        use ethers::types::U256;
 
-        use crate::week_3::{intro_to_ethers::find_my_balance, testing_utils};
+        use crate::week_3::{
+            intro_to_ethers::find_my_balance,
+            testing_utils::{self, DEFAULT_ACCOUNT_ADDRESS},
+        };
 
+        #[ignore]
         #[tokio::test]
         async fn should_get_the_account_initial_balance() -> Result<(), Box<dyn Error>> {
             // Arrange
             let provider = testing_utils::get_provider();
-            let wallet = testing_utils::get_wallet(None);
 
             // Act
-            let balance = find_my_balance(&provider, &hex::encode(wallet.address())).await?;
+            let balance = find_my_balance(&provider, DEFAULT_ACCOUNT_ADDRESS).await?;
 
             // Assert
             assert_eq!(
@@ -330,21 +324,18 @@ mod tests {
         use std::error::Error;
 
         use ethers::{
-            prelude::SignerMiddleware,
             providers::Middleware,
-            signers::Signer,
             types::{Address, U256},
         };
 
         use crate::week_3::{intro_to_ethers::donate, testing_utils};
 
+        #[ignore]
         #[tokio::test]
         async fn should_increase_the_balance_of_each_charity() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
-            let wallet = testing_utils::get_wallet(None).with_chain_id(31337_u64);
-
-            let client = SignerMiddleware::new(provider.clone(), wallet);
+            let client = testing_utils::get_provider_with_signer(None, None);
+            let provider = client.inner();
 
             let charities = vec![
                 "0xBfB25955691D8751727102A59aA49226C401F8D4",
@@ -365,15 +356,13 @@ mod tests {
             // Act
             donate(&client, &charities).await?;
 
-            testing_utils::mine_block(&provider).await?;
+            testing_utils::mine_block(provider).await?;
 
             // Assert
             for (idx, address) in charities.iter().enumerate() {
                 let balance = provider
                     .get_balance(address.parse::<Address>()?, None)
                     .await?;
-                println!("{:#?}", balance);
-                println!("{:#?}", initial_balances[idx]);
 
                 assert_eq!(initial_balances[idx] + U256::from(10 ^ 18), balance)
             }
