@@ -10,7 +10,7 @@ The exercises are grouped by week and module under the `./src` folder. Modules' 
 
 - [x] [week-1: Bockchain Criptography](./src/week_1/)
 - [x] [week-2: Blockchain Storage](./src/week_2/)
-- [ ] week-3: Ethereum (not started)
+- [x] [week-3: Ethereum](./src/week_3/)
 - [ ] week-4: Smart Contract Basics (not available yet)
 - [ ] week-5: Solidity (not available yet)
 - [ ] week-6: Solidity Core (not available yet)
