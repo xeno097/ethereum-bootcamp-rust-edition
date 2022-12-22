@@ -34,21 +34,13 @@ async fn find_ether(
 mod tests {
     use std::error::Error;
 
-    use ethers::core::rand::thread_rng;
     use ethers::prelude::SignerMiddleware;
     use ethers::providers::{Http, Middleware, Provider};
-    use ethers::signers::{LocalWallet, Signer, Wallet};
-    use ethers::types::H160;
+    use ethers::signers::Wallet;
     use k256::ecdsa::SigningKey;
 
     use crate::week_3::testing_utils::{self, send_ether};
     use crate::week_3::where_is_the_ether::find_ether;
-
-    fn generate_fake_address() -> H160 {
-        let wallet = LocalWallet::new(&mut thread_rng());
-
-        wallet.address()
-    }
 
     async fn dispatch_ether_n_times(
         client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -56,7 +48,7 @@ mod tests {
         times: i32,
     ) -> Result<(), Box<dyn Error>> {
         for _ in 0..times {
-            let address = hex::encode(generate_fake_address());
+            let address = hex::encode(testing_utils::generate_fake_random_address());
             send_ether(client, 5 * (10 ^ 17), Some(&address)).await?;
             addresses.push(address);
         }

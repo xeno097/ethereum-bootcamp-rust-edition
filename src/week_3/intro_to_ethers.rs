@@ -12,6 +12,8 @@ use ethers::{
 };
 use k256::ecdsa::SigningKey;
 
+const TO_ADDRESS: &str = "0xdD0DC6FB59E100ee4fA9900c2088053bBe14DE92";
+
 #[allow(dead_code)]
 fn create_wallets() -> (Wallet<SigningKey>, Wallet<SigningKey>) {
     let private_key_wallet = "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d"
@@ -28,7 +30,7 @@ fn create_wallets() -> (Wallet<SigningKey>, Wallet<SigningKey>) {
 
 #[allow(dead_code)]
 async fn sign_transaction(wallet: &Wallet<SigningKey>) -> Result<TypedTransaction, Box<dyn Error>> {
-    let to = "0xdD0DC6FB59E100ee4fA9900c2088053bBe14DE92".parse::<Address>()?;
+    let to = TO_ADDRESS.parse::<Address>()?;
 
     let tx = TransactionRequest::new()
         .to(to)
@@ -127,12 +129,13 @@ mod tests {
 
         use crate::week_3::{intro_to_ethers::sign_transaction, testing_utils};
 
+        const PRIVATE_KEY: &str =
+            "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d";
+
         #[tokio::test]
         async fn should_sign_the_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(
-                "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d",
-            ));
+            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -148,9 +151,7 @@ mod tests {
         #[tokio::test]
         async fn should_have_the_value_field_set_to_1_eth() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(
-                "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d",
-            ));
+            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -178,9 +179,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_the_from_address() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(
-                "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d",
-            ));
+            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -199,7 +198,10 @@ mod tests {
 
         use ethers::providers::Middleware;
 
-        use crate::week_3::{intro_to_ethers::send_ether, testing_utils};
+        use crate::week_3::{
+            intro_to_ethers::{send_ether, TO_ADDRESS},
+            testing_utils,
+        };
 
         #[ignore]
         #[tokio::test]
@@ -211,12 +213,7 @@ mod tests {
             let expected_from = client.address();
 
             // Act
-            let tx = send_ether(
-                &client,
-                1000000000000000000,
-                "0xdD0DC6FB59E100ee4fA9900c2088053bBe14DE92",
-            )
-            .await?;
+            let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
             testing_utils::mine_block(provider).await?;
 
@@ -242,12 +239,7 @@ mod tests {
             let expected_block_number = current_block_number + 1;
 
             // Act
-            let tx = send_ether(
-                &client,
-                1000000000000000000,
-                "0xdD0DC6FB59E100ee4fA9900c2088053bBe14DE92",
-            )
-            .await?;
+            let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
             testing_utils::mine_block(provider).await?;
 
@@ -272,12 +264,7 @@ mod tests {
 
             // Act
             for _ in 0..3 {
-                let tx = send_ether(
-                    &client,
-                    1000000000000000000,
-                    "0xdD0DC6FB59E100ee4fA9900c2088053bBe14DE92",
-                )
-                .await?;
+                let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
                 testing_utils::mine_block(provider).await?;
 

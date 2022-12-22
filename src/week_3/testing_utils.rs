@@ -2,10 +2,10 @@ use std::{convert::TryFrom, error::Error};
 
 use ethers::{
     abi::Address,
-    prelude::SignerMiddleware,
+    prelude::{rand::thread_rng, SignerMiddleware},
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer, Wallet},
-    types::{BlockId, BlockNumber, TransactionRequest},
+    types::{BlockId, BlockNumber, TransactionRequest, H160},
 };
 use k256::ecdsa::SigningKey;
 
@@ -73,4 +73,10 @@ pub async fn mine_block(provider: &Provider<Http>) -> Result<(), Box<dyn Error>>
     let _: String = provider.request("evm_mine", ()).await?;
 
     Ok(())
+}
+
+#[allow(dead_code)]
+pub fn generate_fake_random_address() -> H160 {
+    let wallet = LocalWallet::new(&mut thread_rng());
+    wallet.address()
 }
