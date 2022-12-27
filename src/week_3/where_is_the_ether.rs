@@ -39,7 +39,7 @@ mod tests {
     use ethers::signers::Wallet;
     use k256::ecdsa::SigningKey;
 
-    use crate::week_3::testing_utils::{self, send_ether};
+    use crate::utils::send_ether;
     use crate::week_3::where_is_the_ether::find_ether;
 
     async fn dispatch_ether_n_times(
@@ -48,12 +48,12 @@ mod tests {
         times: i32,
     ) -> Result<(), Box<dyn Error>> {
         for _ in 0..times {
-            let address = hex::encode(testing_utils::generate_fake_random_address());
+            let address = hex::encode(crate::utils::generate_fake_random_address());
             send_ether(client, 5 * (10 ^ 17), Some(&address)).await?;
             addresses.push(address);
         }
 
-        testing_utils::mine_block(client.inner()).await?;
+        crate::utils::mine_block(client.inner()).await?;
 
         Ok(())
     }
@@ -61,7 +61,7 @@ mod tests {
     #[tokio::test]
     async fn should_find_all_the_addresses() -> Result<(), Box<dyn Error>> {
         // Arrange
-        let client = testing_utils::get_provider_with_signer(None, None);
+        let client = crate::utils::get_provider_with_signer(None, None);
         let provider = client.inner();
 
         let mut addresses = Vec::new();
