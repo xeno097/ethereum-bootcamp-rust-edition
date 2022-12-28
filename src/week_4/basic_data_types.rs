@@ -22,7 +22,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_a_to_true() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = Booleans::new(contract.address(), contract.client());
 
             // Act
@@ -37,7 +37,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_b_to_true() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = Booleans::new(contract.address(), contract.client());
 
             // Act
@@ -72,7 +72,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_a_to_a_number_less_than_256() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
 
             // Act
@@ -87,7 +87,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_b_to_a_number_greater_than_256() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
 
             // Act
@@ -102,7 +102,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_sum_to_a_plus_b() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
 
             let b = contract_instance.b().call().await?;
@@ -143,7 +143,7 @@ mod tests {
         async fn should_set_a_variable_to_a_positive_number_and_the_other_to_a_negative_one(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = SignedIntegers::new(contract.address(), contract.client());
 
             // Act
@@ -160,7 +160,7 @@ mod tests {
         async fn should_find_the_absolute_difference_between_the_two_variables(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = SignedIntegers::new(contract.address(), contract.client());
 
             let b = contract_instance.b().call().await? as i16;
@@ -196,7 +196,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_msg1_to_bytes32_with_hello_world() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = StringLiterals::new(contract.address(), contract.client());
 
             // Act
@@ -214,7 +214,7 @@ mod tests {
         async fn should_set_msg2_to_a_string_that_requires_more_than_32_bytes(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = StringLiterals::new(contract.address(), contract.client());
 
             // Act
@@ -250,7 +250,7 @@ mod tests {
         #[tokio::test]
         async fn should_create_four_foods() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, None).await?;
+            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
             let contract_instance = Enums::new(contract.address(), contract.client());
 
             // Act

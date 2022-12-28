@@ -1,7 +1,7 @@
 use std::{convert::TryFrom, error::Error};
 
 use ethers::{
-    abi::Address,
+    abi::{Address, Tokenize},
     contract::Contract,
     prelude::{rand::thread_rng, ContractFactory, SignerMiddleware},
     providers::{Http, Middleware, Provider},
@@ -84,9 +84,10 @@ pub fn generate_fake_random_address() -> H160 {
 }
 
 #[allow(dead_code)]
-pub async fn deploy_contract(
+pub async fn deploy_contract<T: Tokenize>(
     path: &str,
     contract_name: &str,
+    arguments: T,
     client_with_signer: Option<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
 ) -> Result<Contract<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>, Box<dyn Error>> {
     let compiled = Solc::default().compile_source(path)?;
@@ -103,7 +104,7 @@ pub async fn deploy_contract(
         client,
     );
 
-    let contract = factory.deploy(())?.send().await?;
+    let contract = factory.deploy(arguments)?.send().await?;
 
     Ok(contract)
 }
