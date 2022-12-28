@@ -11,6 +11,8 @@ use ethers::{
 };
 use k256::ecdsa::SigningKey;
 
+pub type ClientWithSigner = SignerMiddleware<Provider<Http>, Wallet<SigningKey>>;
+
 pub const DEFAULT_ACCOUNT_PRIVATE_KEY: &str =
     "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
@@ -35,7 +37,7 @@ pub fn get_wallet(private_key: Option<&str>) -> Wallet<SigningKey> {
 pub fn get_provider_with_signer(
     private_key: Option<&str>,
     chain_id: Option<u64>,
-) -> SignerMiddleware<Provider<Http>, Wallet<SigningKey>> {
+) -> ClientWithSigner {
     let provider = get_provider();
     let wallet = get_wallet(private_key);
 
@@ -46,7 +48,7 @@ pub fn get_provider_with_signer(
 
 #[allow(dead_code)]
 pub async fn send_ether(
-    client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+    client: &ClientWithSigner,
     amount: i128,
     to: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
@@ -88,8 +90,8 @@ pub async fn deploy_contract<T: Tokenize>(
     path: &str,
     contract_name: &str,
     arguments: T,
-    client_with_signer: Option<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-) -> Result<Contract<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>, Box<dyn Error>> {
+    client_with_signer: Option<ClientWithSigner>,
+) -> Result<Contract<ClientWithSigner>, Box<dyn Error>> {
     let compiled = Solc::default().compile_source(path)?;
     let contract = compiled
         .get(path, contract_name)
