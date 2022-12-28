@@ -2,9 +2,11 @@ use std::{convert::TryFrom, error::Error};
 
 use ethers::{
     abi::Address,
-    prelude::{rand::thread_rng, SignerMiddleware},
+    contract::Contract,
+    prelude::{rand::thread_rng, ContractFactory, SignerMiddleware},
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer, Wallet},
+    solc::Solc,
     types::{BlockId, BlockNumber, TransactionRequest, H160},
 };
 use k256::ecdsa::SigningKey;
@@ -79,4 +81,29 @@ pub async fn mine_block(provider: &Provider<Http>) -> Result<(), Box<dyn Error>>
 pub fn generate_fake_random_address() -> H160 {
     let wallet = LocalWallet::new(&mut thread_rng());
     wallet.address()
+}
+
+#[allow(dead_code)]
+pub async fn deploy_contract(
+    path: &str,
+    contract_name: &str,
+    client_with_signer: Option<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+) -> Result<Contract<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>, Box<dyn Error>> {
+    let compiled = Solc::default().compile_source(path)?;
+    let contract = compiled
+        .get(path, contract_name)
+        .expect("could not find contract");
+
+    let client = client_with_signer.unwrap_or_else(|| get_provider_with_signer(None, None));
+    let client = std::sync::Arc::new(client);
+
+    let factory = ContractFactory::new(
+        contract.abi.unwrap().clone(),
+        contract.bytecode().unwrap().clone(),
+        client,
+    );
+
+    let contract = factory.deploy(())?.send().await?;
+
+    Ok(contract)
 }
