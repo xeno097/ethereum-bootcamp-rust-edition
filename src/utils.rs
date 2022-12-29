@@ -18,6 +18,11 @@ pub const DEFAULT_ACCOUNT_PRIVATE_KEY: &str =
 
 pub const DEFAULT_ACCOUNT_ADDRESS: &str = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 
+pub const ALTERNATIVE_ACCOUNT_PRIVATE_KEY: &str =
+    "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
+
+pub const ALTERNATIVE_ACCOUNT_ADDRESS: &str = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
+
 #[allow(dead_code)]
 pub fn get_provider() -> Provider<Http> {
     let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
@@ -92,6 +97,19 @@ pub async fn deploy_contract<T: Tokenize>(
     arguments: T,
     client_with_signer: Option<ClientWithSigner>,
 ) -> Result<Contract<ClientWithSigner>, Box<dyn Error>> {
+    let factory = compile_contract(path, contract_name, client_with_signer)?;
+
+    let contract = factory.deploy(arguments)?.send().await?;
+
+    Ok(contract)
+}
+
+#[allow(dead_code)]
+pub fn compile_contract(
+    path: &str,
+    contract_name: &str,
+    client_with_signer: Option<ClientWithSigner>,
+) -> Result<ContractFactory<ClientWithSigner>, Box<dyn Error>> {
     let compiled = Solc::default().compile_source(path)?;
     let contract = compiled
         .get(path, contract_name)
@@ -106,7 +124,5 @@ pub async fn deploy_contract<T: Tokenize>(
         client,
     );
 
-    let contract = factory.deploy(arguments)?.send().await?;
-
-    Ok(contract)
+    Ok(factory)
 }
