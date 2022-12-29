@@ -7,3 +7,4 @@ mod practice_solidity;
 mod sending_data;
 mod sending_ether;
 mod solidity_functions;
+mod winner;
