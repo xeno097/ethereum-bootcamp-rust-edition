@@ -186,12 +186,12 @@ mod tests {
             // Act
             transfer(&contract_instance, friend_address).await?;
 
+            // Assert
             let value = contract_instance
                 .balances(contract_instance.client().address())
                 .call()
                 .await?;
 
-            // Assert
             assert_eq!(value, expected_value);
 
             Ok(())
@@ -211,9 +211,9 @@ mod tests {
             // Act
             transfer(&contract_instance, friend_address).await?;
 
+            // Assert
             let value = contract_instance.balances(friend_address).call().await?;
 
-            // Assert
             assert_eq!(value, expected_value);
 
             Ok(())
@@ -224,7 +224,10 @@ mod tests {
         use std::error::Error;
 
         use crate::{
-            utils::{deploy_contract, get_provider_with_signer, ClientWithSigner},
+            utils::{
+                deploy_contract, get_provider_with_signer, ClientWithSigner,
+                ALTERNATIVE_ACCOUNT_PRIVATE_KEY,
+            },
             week_4::contract_interaction::{set_message, Signer},
         };
 
@@ -236,10 +239,8 @@ mod tests {
             // Arrange
             let expected_value = String::from("Some random gibberish");
 
-            let alterantive_signer = get_provider_with_signer(
-                Some("59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"),
-                None,
-            );
+            let alterantive_signer =
+                get_provider_with_signer(Some(ALTERNATIVE_ACCOUNT_PRIVATE_KEY), None);
 
             let contract_instance: Signer<ClientWithSigner> =
                 deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
@@ -249,9 +250,9 @@ mod tests {
             // Act
             set_message(&contract_instance, alterantive_signer).await?;
 
+            // Assert
             let value = contract_instance.message().call().await?;
 
-            // Assert
             assert_eq!(value, expected_value);
 
             Ok(())
@@ -282,12 +283,12 @@ mod tests {
             // Act
             deposit(&contract_instance).await?;
 
+            // Assert
             let contract_balance = contract_instance
                 .client()
                 .get_balance(contract_instance.address(), None)
                 .await?;
 
-            // Assert
             assert!(contract_balance.ge(&parse_ether(1)?));
 
             Ok(())
