@@ -38,6 +38,7 @@ mod tests {
         async fn should_change_x_to_1337() -> Result<(), Box<dyn Error>> {
             // Arrange
             let initial_x = U256::from(10);
+            let expected_value = U256::from(1337);
 
             let contract_instance: ModifyState<ClientWithSigner> =
                 deploy_contract(CONTRACT_PATH, CONTRACT_NAME, initial_x, None)
@@ -47,10 +48,10 @@ mod tests {
             // Act
             modify_state(&contract_instance).await?;
 
+            // Assert
             let x = contract_instance.x().call().await?;
 
-            // Assert
-            assert_eq!(x, U256::from(1337));
+            assert_eq!(x, expected_value);
 
             Ok(())
         }
