@@ -6,7 +6,7 @@ mod tests {
 
         use ethers::prelude::abigen;
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             Booleans,
@@ -22,8 +22,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_a_to_true() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = Booleans::new(contract.address(), contract.client());
+            let contract_instance: Booleans<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let a = contract_instance.a().call().await?;
@@ -37,8 +39,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_b_to_true() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = Booleans::new(contract.address(), contract.client());
+            let contract_instance: Booleans<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let b = contract_instance.b().call().await?;
@@ -55,7 +59,7 @@ mod tests {
 
         use ethers::{prelude::abigen, types::U256};
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             UnsignedIntegers,
@@ -72,8 +76,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_a_to_a_number_less_than_256() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
+            let contract_instance: UnsignedIntegers<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let a = contract_instance.a().call().await?;
@@ -87,8 +93,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_b_to_a_number_greater_than_256() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
+            let contract_instance: UnsignedIntegers<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let b = contract_instance.b().call().await?;
@@ -102,8 +110,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_sum_to_a_plus_b() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = UnsignedIntegers::new(contract.address(), contract.client());
+            let contract_instance: UnsignedIntegers<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             let b = contract_instance.b().call().await?;
             let a = contract_instance.a().call().await?;
@@ -125,7 +135,7 @@ mod tests {
 
         use ethers::prelude::abigen;
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             SignedIntegers,
@@ -143,8 +153,10 @@ mod tests {
         async fn should_set_a_variable_to_a_positive_number_and_the_other_to_a_negative_one(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = SignedIntegers::new(contract.address(), contract.client());
+            let contract_instance: SignedIntegers<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let a = contract_instance.a().call().await?;
@@ -160,8 +172,10 @@ mod tests {
         async fn should_find_the_absolute_difference_between_the_two_variables(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = SignedIntegers::new(contract.address(), contract.client());
+            let contract_instance: SignedIntegers<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             let b = contract_instance.b().call().await? as i16;
             let a = contract_instance.a().call().await? as i16;
@@ -180,7 +194,7 @@ mod tests {
 
         use ethers::prelude::abigen;
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             StringLiterals,
@@ -196,8 +210,10 @@ mod tests {
         #[tokio::test]
         async fn should_set_msg1_to_bytes32_with_hello_world() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = StringLiterals::new(contract.address(), contract.client());
+            let contract_instance: StringLiterals<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let msg1 = contract_instance.msg_1().call().await?;
@@ -214,8 +230,10 @@ mod tests {
         async fn should_set_msg2_to_a_string_that_requires_more_than_32_bytes(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = StringLiterals::new(contract.address(), contract.client());
+            let contract_instance: StringLiterals<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let msg2: String = contract_instance.msg_2().call().await?;
@@ -232,7 +250,7 @@ mod tests {
 
         use ethers::prelude::abigen;
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             Enums,
@@ -250,8 +268,10 @@ mod tests {
         #[tokio::test]
         async fn should_create_four_foods() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-            let contract_instance = Enums::new(contract.address(), contract.client());
+            let contract_instance: Enums<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
+                    .await?
+                    .into();
 
             // Act
             let food1 = contract_instance.food_1().call().await?;
