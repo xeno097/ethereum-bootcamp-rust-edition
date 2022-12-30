@@ -78,18 +78,18 @@ mod tests {
 
         use ethers::{providers::Middleware, types::U64};
 
-        use crate::week_3::{json_rpc::get_block_number, testing_utils};
+        use crate::week_3::json_rpc::get_block_number;
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_latest_block_number() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
+            let provider = crate::utils::get_provider();
 
             let current_block_number = provider.get_block_number().await?;
             let expected_block_number = current_block_number + U64::from(1);
 
-            testing_utils::mine_block(&provider).await?;
+            crate::utils::mine_block(&provider).await?;
 
             // Act
             let res = get_block_number(&provider).await;
@@ -104,13 +104,13 @@ mod tests {
     mod get_balance {
         use std::error::Error;
 
-        use crate::week_3::{json_rpc::get_balance, testing_utils};
+        use crate::week_3::json_rpc::get_balance;
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_address_balance() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
+            let provider = crate::utils::get_provider();
             let address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
 
             // 10000 * (10 ^ 18) ETH
@@ -131,13 +131,13 @@ mod tests {
 
         use ethers::{abi::Address, providers::Middleware, types::U256};
 
-        use crate::week_3::{json_rpc::get_nonce, testing_utils};
+        use crate::week_3::json_rpc::get_nonce;
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_account_nonce() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client_with_signer = testing_utils::get_provider_with_signer(None, None);
+            let client_with_signer = crate::utils::get_provider_with_signer(None, None);
             let provider = client_with_signer.inner();
 
             let address = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
@@ -148,9 +148,9 @@ mod tests {
 
             let expected_nonce = current_account_nonce.add(1);
 
-            testing_utils::send_ether(&client_with_signer, 1, None).await?;
+            crate::utils::send_ether(&client_with_signer, 1, None).await?;
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             // Act
             let res = get_nonce(provider, address).await;
@@ -172,7 +172,7 @@ mod tests {
         };
         use k256::ecdsa::SigningKey;
 
-        use crate::week_3::{json_rpc::get_total_transactions, testing_utils};
+        use crate::week_3::json_rpc::get_total_transactions;
 
         async fn test_get_total_transactions(
             client: &SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -182,10 +182,10 @@ mod tests {
             let provider = client.inner();
 
             for _ in 0..num_transactions {
-                testing_utils::send_ether(client, 1, None).await?;
+                crate::utils::send_ether(client, 1, None).await?;
             }
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             let current_block_number = provider.get_block_number().await?;
 
@@ -203,7 +203,7 @@ mod tests {
         async fn should_get_the_expected_number_of_total_transactions() -> Result<(), Box<dyn Error>>
         {
             // Arrange
-            let client_with_signer = testing_utils::get_provider_with_signer(None, None);
+            let client_with_signer = crate::utils::get_provider_with_signer(None, None);
 
             let transactions_num = vec![0, 1, 3, 5, 11];
 
@@ -221,13 +221,13 @@ mod tests {
         use ethers::providers::Middleware;
         use ethers::types::U256;
 
-        use crate::week_3::{json_rpc::get_total_balance, testing_utils};
+        use crate::week_3::json_rpc::get_total_balance;
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_total_balance_of_the_addresses() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client_with_signer = testing_utils::get_provider_with_signer(None, None);
+            let client_with_signer = crate::utils::get_provider_with_signer(None, None);
 
             let provider = client_with_signer.inner();
 
@@ -242,7 +242,7 @@ mod tests {
             let expected_total = 15 * (10 ^ 18);
 
             for (idx, address) in addresses.iter().enumerate() {
-                testing_utils::send_ether(
+                crate::utils::send_ether(
                     &client_with_signer,
                     ((idx as i128) + 1) * (10 ^ 18),
                     Some(address),
@@ -250,7 +250,7 @@ mod tests {
                 .await?;
             }
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             // Act
             let res = get_total_balance(provider, addresses).await;

@@ -1,0 +1,11 @@
+mod basic_data_types;
+mod contract_interaction;
+mod deploy_contract_with_ethers;
+mod how_to_modify_state;
+mod how_to_unit_test_a_smart_contract;
+mod learning_revert;
+mod practice_solidity;
+mod sending_data;
+mod sending_ether;
+mod solidity_functions;
+mod winner;

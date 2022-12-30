@@ -127,7 +127,7 @@ mod tests {
 
         use ethers::types::U256;
 
-        use crate::week_3::{intro_to_ethers::sign_transaction, testing_utils};
+        use crate::week_3::intro_to_ethers::sign_transaction;
 
         const PRIVATE_KEY: &str =
             "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d";
@@ -135,7 +135,7 @@ mod tests {
         #[tokio::test]
         async fn should_sign_the_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
+            let wallet = crate::utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -151,7 +151,7 @@ mod tests {
         #[tokio::test]
         async fn should_have_the_value_field_set_to_1_eth() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
+            let wallet = crate::utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -164,7 +164,7 @@ mod tests {
         #[tokio::test]
         async fn should_have_the_gas_limit_set_to_21000() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(
+            let wallet = crate::utils::get_wallet(Some(
                 "f2f48ee19680706196e2e339e5da3491186e0c4c5030670656b0e0164837257d",
             ));
 
@@ -179,7 +179,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_the_from_address() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let wallet = testing_utils::get_wallet(Some(PRIVATE_KEY));
+            let wallet = crate::utils::get_wallet(Some(PRIVATE_KEY));
 
             // Act
             let tx = sign_transaction(&wallet).await?;
@@ -198,16 +198,13 @@ mod tests {
 
         use ethers::providers::Middleware;
 
-        use crate::week_3::{
-            intro_to_ethers::{send_ether, TO_ADDRESS},
-            testing_utils,
-        };
+        use crate::week_3::intro_to_ethers::{send_ether, TO_ADDRESS};
 
         #[ignore]
         #[tokio::test]
         async fn should_resolve_with_a_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client = testing_utils::get_provider_with_signer(None, None);
+            let client = crate::utils::get_provider_with_signer(None, None);
             let provider = client.inner();
 
             let expected_from = client.address();
@@ -215,7 +212,7 @@ mod tests {
             // Act
             let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             let receipt = tx.await?.unwrap();
 
@@ -232,7 +229,7 @@ mod tests {
         #[tokio::test]
         async fn should_get_mined() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client = testing_utils::get_provider_with_signer(None, None);
+            let client = crate::utils::get_provider_with_signer(None, None);
             let provider = client.inner();
 
             let current_block_number = provider.get_block_number().await?;
@@ -241,7 +238,7 @@ mod tests {
             // Act
             let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             let receipt = tx.await?.unwrap();
 
@@ -254,7 +251,7 @@ mod tests {
         #[tokio::test]
         async fn should_correctly_track_the_nonce() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client = testing_utils::get_provider_with_signer(None, None);
+            let client = crate::utils::get_provider_with_signer(None, None);
             let provider = client.inner();
 
             let sender_address = client.address();
@@ -266,7 +263,7 @@ mod tests {
             for _ in 0..3 {
                 let tx = send_ether(&client, 1000000000000000000, TO_ADDRESS).await?;
 
-                testing_utils::mine_block(provider).await?;
+                crate::utils::mine_block(provider).await?;
 
                 let _ = tx.await?.unwrap();
             }
@@ -284,16 +281,15 @@ mod tests {
 
         use ethers::types::U256;
 
-        use crate::week_3::{
-            intro_to_ethers::find_my_balance,
-            testing_utils::{self, DEFAULT_ACCOUNT_ADDRESS},
-        };
+        use crate::utils::DEFAULT_ACCOUNT_ADDRESS;
+
+        use crate::week_3::intro_to_ethers::find_my_balance;
 
         #[ignore]
         #[tokio::test]
         async fn should_get_the_account_initial_balance() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = testing_utils::get_provider();
+            let provider = crate::utils::get_provider();
 
             // Act
             let balance = find_my_balance(&provider, DEFAULT_ACCOUNT_ADDRESS).await?;
@@ -315,13 +311,13 @@ mod tests {
             types::{Address, U256},
         };
 
-        use crate::week_3::{intro_to_ethers::donate, testing_utils};
+        use crate::week_3::intro_to_ethers::donate;
 
         #[ignore]
         #[tokio::test]
         async fn should_increase_the_balance_of_each_charity() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let client = testing_utils::get_provider_with_signer(None, None);
+            let client = crate::utils::get_provider_with_signer(None, None);
             let provider = client.inner();
 
             let charities = vec![
@@ -343,7 +339,7 @@ mod tests {
             // Act
             donate(&client, &charities).await?;
 
-            testing_utils::mine_block(provider).await?;
+            crate::utils::mine_block(provider).await?;
 
             // Assert
             for (idx, address) in charities.iter().enumerate() {
