@@ -19,7 +19,10 @@ mod tests {
         use ethers::{providers::Middleware, types::H160, utils::parse_ether};
 
         use crate::{
-            utils::{deploy_contract, get_provider_with_signer, send_ether, ClientWithSigner},
+            utils::{
+                deploy_contract, get_provider_with_signer, send_ether, ClientWithSigner,
+                ALTERNATIVE_ACCOUNT_PRIVATE_KEY,
+            },
             week_4::sending_ether::SendingEther,
         };
 
@@ -49,7 +52,6 @@ mod tests {
             let owner = contract_instance.owner().call().await?;
 
             // Assert
-
             assert_eq!(owner, expected_value);
 
             Ok(())
@@ -96,10 +98,7 @@ mod tests {
 
             let owner_address = contract_instance.client().address();
 
-            let tipper = get_provider_with_signer(
-                Some("59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"),
-                None,
-            );
+            let tipper = get_provider_with_signer(Some(ALTERNATIVE_ACCOUNT_PRIVATE_KEY), None);
 
             let contract_instance: SendingEther<ClientWithSigner> =
                 contract_instance.connect(Arc::new(tipper)).into();
