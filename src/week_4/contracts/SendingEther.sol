@@ -10,7 +10,7 @@ contract SendingEther {
         charity = _charity;
     }
 
-    receive() external payable{}
+    receive() external payable {}
 
     function tip() external payable {
         (bool ok,) = owner.call{value: msg.value}("");

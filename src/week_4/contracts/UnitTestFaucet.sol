@@ -2,29 +2,29 @@
 pragma solidity 0.8.17;
 
 contract Faucet {
-  address payable public owner;
+    address payable public owner;
 
-  constructor() payable {
-    owner = payable(msg.sender);
-  }
-  
-  function withdraw(uint _amount) payable public {
-    require(_amount <= 0.1 ether);
-    (bool sent, ) = payable(msg.sender).call{value: _amount}("");
-    require(sent, "Failed to send Ether");
-  }
+    constructor() payable {
+        owner = payable(msg.sender);
+    }
 
-  function withdrawAll() onlyOwner public {
-    (bool sent, ) = owner.call{value: address(this).balance}("");
-    require(sent, "Failed to send Ether");
-  }
+    function withdraw(uint256 _amount) public payable {
+        require(_amount <= 0.1 ether);
+        (bool sent,) = payable(msg.sender).call{value: _amount}("");
+        require(sent, "Failed to send Ether");
+    }
 
-  function destroyFaucet() onlyOwner public {
-    selfdestruct(owner);
-  }
+    function withdrawAll() public onlyOwner {
+        (bool sent,) = owner.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
+    }
 
-  modifier onlyOwner() {
-    require(msg.sender == owner);
-    _;
-  }
+    function destroyFaucet() public onlyOwner {
+        selfdestruct(owner);
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
 }

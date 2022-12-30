@@ -2,14 +2,13 @@
 pragma solidity ^0.8.4;
 
 contract ModifyState {
-  uint public x;
+    uint256 public x;
 
-  constructor(uint _x) {
-    x = _x;
-  }
+    constructor(uint256 _x) {
+        x = _x;
+    }
 
-  function modifyToLeet() public {
-    x = 1337;
-  }
-
+    function modifyToLeet() public {
+        x = 1337;
+    }
 }

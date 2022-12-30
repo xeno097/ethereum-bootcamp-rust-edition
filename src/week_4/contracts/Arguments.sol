@@ -2,17 +2,17 @@
 pragma solidity ^0.8.4;
 
 contract Arguments {
-    uint public x;
-    
-    constructor(uint _x){
+    uint256 public x;
+
+    constructor(uint256 _x) {
         x = _x;
     }
 
     function increment() external {
-        x+=1;
+        x += 1;
     }
 
-    function add(uint num) external view returns(uint){
+    function add(uint256 num) external view returns (uint256) {
         return x + num;
     }
 }
