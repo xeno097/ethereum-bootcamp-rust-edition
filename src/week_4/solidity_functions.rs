@@ -6,7 +6,7 @@ mod tests {
 
         use ethers::{prelude::abigen, types::U256};
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             Arguments,
@@ -24,9 +24,10 @@ mod tests {
             // Arrange
             let expected_value = U256::from(0);
 
-            let contract =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None).await?;
-            let contract_instance = Arguments::new(contract.address(), contract.client());
+            let contract_instance: Arguments<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                    .await?
+                    .into();
 
             // Act
             let x = contract_instance.x().call().await?;
@@ -42,9 +43,10 @@ mod tests {
             // Arrange
             let expected_value = U256::from(1);
 
-            let contract =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, U256::from(0), None).await?;
-            let contract_instance = Arguments::new(contract.address(), contract.client());
+            let contract_instance: Arguments<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                    .await?
+                    .into();
             contract_instance.increment().send().await?.await?;
 
             // Act
@@ -61,9 +63,10 @@ mod tests {
             // Arrange
             let expected_value = U256::from(2);
 
-            let contract =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, U256::from(0), None).await?;
-            let contract_instance = Arguments::new(contract.address(), contract.client());
+            let contract_instance: Arguments<ClientWithSigner> =
+                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                    .await?
+                    .into();
             contract_instance.increment().send().await?.await?;
             contract_instance.increment().send().await?.await?;
 
@@ -82,7 +85,7 @@ mod tests {
 
         use ethers::{prelude::abigen, types::U256};
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             Arguments,
@@ -106,9 +109,10 @@ mod tests {
                 // Arrange
                 let expected_value = test_case.0 + test_case.1;
 
-                let contract =
-                    deploy_contract(CONTRACT_PATH, CONTRACT_NAME, test_case.0, None).await?;
-                let contract_instance = Arguments::new(contract.address(), contract.client());
+                let contract_instance: Arguments<ClientWithSigner> =
+                    deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                        .await?
+                        .into();
 
                 // Act
                 let x = contract_instance.add(test_case.1).call().await?;
@@ -126,7 +130,7 @@ mod tests {
 
         use ethers::{prelude::abigen, types::U256};
 
-        use crate::utils::deploy_contract;
+        use crate::utils::{deploy_contract, ClientWithSigner};
 
         abigen!(
             PureDouble,
@@ -147,8 +151,10 @@ mod tests {
                 // Arrange
                 let expected_value = test_case * 2;
 
-                let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-                let contract_instance = PureDouble::new(contract.address(), contract.client());
+                let contract_instance: PureDouble<ClientWithSigner> =
+                    deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                        .await?
+                        .into();
 
                 // Act
                 let x = contract_instance.double(test_case).call().await?;
@@ -172,8 +178,10 @@ mod tests {
                 // Arrange
                 let expected_value = (test_case.0 * 2, test_case.1 * 2);
 
-                let contract = deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None).await?;
-                let contract_instance = PureDouble::new(contract.address(), contract.client());
+                let contract_instance: PureDouble<ClientWithSigner> =
+                    deploy_contract(CONTRACT_PATH, CONTRACT_NAME, expected_value, None)
+                        .await?
+                        .into();
 
                 // Act
                 let x = contract_instance
