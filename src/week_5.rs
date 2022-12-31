@@ -1,3 +1,4 @@
+mod arrays;
 mod contract_puzzles;
 mod escrow;
 mod events;
