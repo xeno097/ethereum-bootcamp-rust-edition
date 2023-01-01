@@ -2,77 +2,84 @@
 pragma solidity ^0.8.4;
 
 contract VoteStorage {
-	enum Choices { Yes, No }
+    enum Choices {
+        Yes,
+        No
+    }
 
-	struct Vote {
-		Choices choice;
-		address voter;
-	}
+    struct Vote {
+        Choices choice;
+        address voter;
+    }
 
-	Vote public vote;
+    Vote public vote;
 
-	function createVote(Choices choice) external {
-		vote.choice = choice;
-		vote.voter = msg.sender;
-	}
+    function createVote(Choices choice) external {
+        vote.choice = choice;
+        vote.voter = msg.sender;
+    }
 }
 
 contract VoteMemory {
-	enum Choices { Yes, No }
+    enum Choices {
+        Yes,
+        No
+    }
 
-	struct Vote {
-		Choices choice;
-		address voter;
-	}
-	
-	function createVote(Choices choice) external view returns(Vote memory) {
-		return Vote(choice, msg.sender);
-	}
+    struct Vote {
+        Choices choice;
+        address voter;
+    }
+
+    function createVote(Choices choice) external view returns (Vote memory) {
+        return Vote(choice, msg.sender);
+    }
 }
 
-
 contract VoteArray {
-	enum Choices { Yes, No }
-	
-	struct Vote {
-		Choices choice;
-		address voter;
-	}
-	
-	Vote[] public votes;
+    enum Choices {
+        Yes,
+        No
+    }
 
-	function createVote(Choices choice) external {
-		require(!hasVoted(msg.sender));
-		votes.push(Vote(choice,msg.sender));
-	}
+    struct Vote {
+        Choices choice;
+        address voter;
+    }
 
-	function hasVoted(address _voter) public view returns(bool){
-		(Vote memory vote, ) = _getVote(_voter);
-		
-		return vote.voter == _voter;
-	}
+    Vote[] public votes;
 
-	function _getVote(address _voter) private view returns(Vote memory vote, uint idx){
-		for(uint i=0;i< votes.length;i++){
-			if(votes[i].voter == _voter){
-				vote = votes[i];
-				idx = i;
-			}
-		}
-	}
+    function createVote(Choices choice) external {
+        require(!hasVoted(msg.sender));
+        votes.push(Vote(choice, msg.sender));
+    }
 
-	function findChoice(address _voter) external view returns(Choices){
-		(Vote memory vote, ) = _getVote(_voter);
-		
-		return vote.choice;
-	}
+    function hasVoted(address _voter) public view returns (bool) {
+        (Vote memory vote,) = _getVote(_voter);
 
-	function changeVote(Choices _choice) external {
-		(, uint idx) = _getVote(msg.sender);
+        return vote.voter == _voter;
+    }
 
-		require(votes[idx].voter == msg.sender);
+    function _getVote(address _voter) private view returns (Vote memory vote, uint256 idx) {
+        for (uint256 i = 0; i < votes.length; i++) {
+            if (votes[i].voter == _voter) {
+                vote = votes[i];
+                idx = i;
+            }
+        }
+    }
 
-		votes[idx].choice = _choice;
-		
-	}
+    function findChoice(address _voter) external view returns (Choices) {
+        (Vote memory vote,) = _getVote(_voter);
+
+        return vote.choice;
+    }
+
+    function changeVote(Choices _choice) external {
+        (, uint256 idx) = _getVote(msg.sender);
+
+        require(votes[idx].voter == msg.sender);
+
+        votes[idx].choice = _choice;
+    }
 }

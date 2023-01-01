@@ -3,14 +3,15 @@ pragma solidity ^0.8.4;
 
 contract Collectible {
     event Deployed(address indexed owner);
+
     address public owner;
-    uint price;
+    uint256 price;
 
     event Transfer(address indexed from, address indexed to);
 
-    event ForSale(uint price, uint timestamp);
+    event ForSale(uint256 price, uint256 timestamp);
 
-    event Purchase(uint amount, address indexed buyer);
+    event Purchase(uint256 amount, address indexed buyer);
 
     constructor() {
         owner = msg.sender;
@@ -24,7 +25,7 @@ contract Collectible {
         emit Transfer(msg.sender, to);
     }
 
-    function markPrice(uint _price) external {
+    function markPrice(uint256 _price) external {
         require(msg.sender == owner && _price != 0);
         price = _price;
 
@@ -43,6 +44,6 @@ contract Collectible {
         (bool ok,) = oldOwner.call{value: msg.value}("");
         require(ok);
 
-        emit Purchase(msg.value,msg.sender);
+        emit Purchase(msg.value, msg.sender);
     }
 }

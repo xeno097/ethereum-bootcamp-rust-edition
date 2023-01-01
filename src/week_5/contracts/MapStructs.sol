@@ -2,26 +2,25 @@
 pragma solidity ^0.8.4;
 
 contract MapStructs {
-	struct User {
-		uint balance;
-		bool isActive;
-	}
+    struct User {
+        uint256 balance;
+        bool isActive;
+    }
 
-	mapping(address => User) public users;
+    mapping(address => User) public users;
 
-	function createUser() external {
-		require(!users[msg.sender].isActive);
+    function createUser() external {
+        require(!users[msg.sender].isActive);
 
-		users[msg.sender].isActive = true;
-		users[msg.sender].balance = 100;
-	}
+        users[msg.sender].isActive = true;
+        users[msg.sender].balance = 100;
+    }
 
-	function transfer(address to, uint amount) external {
-		require(users[msg.sender].isActive && users[to].isActive);
-		require(users[msg.sender].balance >= amount);
+    function transfer(address to, uint256 amount) external {
+        require(users[msg.sender].isActive && users[to].isActive);
+        require(users[msg.sender].balance >= amount);
 
-		users[msg.sender].balance -= amount;
-		users[to].balance += amount;
-	}
-
+        users[msg.sender].balance -= amount;
+        users[to].balance += amount;
+    }
 }

@@ -7,7 +7,7 @@ contract Escrow {
     address public arbiter;
     bool public isApproved = false;
 
-    event Approved(uint balance);
+    event Approved(uint256 balance);
 
     constructor(address _arbiter, address _beneficiary) payable {
         depositor = msg.sender;
@@ -15,11 +15,10 @@ contract Escrow {
         beneficiary = _beneficiary;
     }
 
-
     function approve() external {
         require(msg.sender == arbiter);
 
-        uint balance =address(this).balance;
+        uint256 balance = address(this).balance;
 
         isApproved = true;
         (bool ok,) = beneficiary.call{value: balance}("");
