@@ -23,6 +23,11 @@ pub const ALTERNATIVE_ACCOUNT_PRIVATE_KEY: &str =
 
 pub const ALTERNATIVE_ACCOUNT_ADDRESS: &str = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8";
 
+pub const THIRD_ACCOUNT_PRIVATE_KEY: &str =
+    "5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a";
+
+pub const THIRD_ACCOUNT_ADDRESS: &str = "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc";
+
 #[allow(dead_code)]
 pub fn get_provider() -> Provider<Http> {
     let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
@@ -125,4 +130,50 @@ pub fn compile_contract(
     );
 
     Ok(factory)
+}
+
+#[allow(dead_code)]
+pub async fn start_impersonating_account(address: &str) -> Result<(), Box<dyn Error>> {
+    let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
+
+    let client = reqwest::Client::new();
+
+    let raw_request = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"hardhat_impersonateAccount","params":["{address}"]}}"#,
+    );
+
+    let _: String = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(raw_request)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub async fn stop_impersonating_account(address: &str) -> Result<(), Box<dyn Error>> {
+    let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
+
+    let client = reqwest::Client::new();
+
+    let raw_request = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"hardhat_stopImpersonatingAccount","params":["{address}"]}}"#,
+    );
+
+    let _: String = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(raw_request)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await?;
+
+    Ok(())
 }
