@@ -172,15 +172,18 @@ mod tests {
         }
 
         #[tokio::test]
-        async fn should_revert_a_non_owner_tries_to_mark_the_price() -> Result<(), Box<dyn Error>> {
+        async fn should_revert_if_a_non_owner_tries_to_mark_the_price() -> Result<(), Box<dyn Error>>
+        {
             // Arrange
             let contract_instance: Collectible<ClientWithSigner> =
                 deploy_contract(CONTRACT_PATH, CONTRACT_NAME, (), None)
                     .await?
                     .into();
 
+            let mark_price = U256::from(1);
+
             contract_instance
-                .mark_price(U256::from(1))
+                .mark_price(mark_price)
                 .send()
                 .await?
                 .await?;
@@ -193,7 +196,7 @@ mod tests {
                 .into();
 
             // Act
-            let res = contract_instance.mark_price(U256::from(1)).await;
+            let res = contract_instance.mark_price(mark_price).await;
 
             // Assert
             assert!(res.is_err());
