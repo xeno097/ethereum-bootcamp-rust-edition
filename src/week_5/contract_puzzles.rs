@@ -40,15 +40,16 @@ abigen!(
 #[cfg(test)]
 mod tests {
 
+    const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
+
     mod game_1 {
         use std::error::Error;
 
         use crate::{
             utils::{deploy_contract, ClientWithSigner},
-            week_5::contract_puzzles::Game1,
+            week_5::contract_puzzles::{tests::CONTRACT_PATH, Game1},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
         const CONTRACT_NAME: &str = "Game1";
 
         #[tokio::test]
@@ -79,10 +80,9 @@ mod tests {
 
         use crate::{
             utils::{deploy_contract, ClientWithSigner},
-            week_5::contract_puzzles::Game2,
+            week_5::contract_puzzles::{tests::CONTRACT_PATH, Game2},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
         const CONTRACT_NAME: &str = "Game2";
 
         #[tokio::test]
@@ -131,10 +131,9 @@ mod tests {
                 deploy_contract, get_provider_with_signer, ClientWithSigner,
                 ALTERNATIVE_ACCOUNT_PRIVATE_KEY, THIRD_ACCOUNT_PRIVATE_KEY,
             },
-            week_5::contract_puzzles::Game3,
+            week_5::contract_puzzles::{tests::CONTRACT_PATH, Game3},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
         const CONTRACT_NAME: &str = "Game3";
 
         #[tokio::test]
@@ -202,10 +201,9 @@ mod tests {
 
         use crate::{
             utils::{deploy_contract, ClientWithSigner},
-            week_5::contract_puzzles::Game4,
+            week_5::contract_puzzles::{tests::CONTRACT_PATH, Game4},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
         const CONTRACT_NAME: &str = "Game4";
 
         #[tokio::test]
@@ -245,10 +243,9 @@ mod tests {
                 deploy_contract, get_provider, send_ether, start_impersonating_account,
                 stop_impersonating_account, ClientWithSigner,
             },
-            week_5::contract_puzzles::Game5,
+            week_5::contract_puzzles::{tests::CONTRACT_PATH, Game5},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/ContractPuzzles.sol";
         const CONTRACT_NAME: &str = "Game5";
 
         #[tokio::test]

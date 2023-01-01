@@ -25,6 +25,8 @@ abigen!(
 #[cfg(test)]
 mod tests {
 
+    const CONTRACT_PATH: &str = "./src/week_5/contracts/Mappings.sol";
+
     mod add_member {
         use std::error::Error;
 
@@ -35,10 +37,9 @@ mod tests {
                 deploy_contract, generate_fake_random_address, ClientWithSigner,
                 ALTERNATIVE_ACCOUNT_ADDRESS, DEFAULT_ACCOUNT_ADDRESS,
             },
-            week_5::mappings::AddMember,
+            week_5::mappings::{tests::CONTRACT_PATH, AddMember},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/AddMember.sol";
         const CONTRACT_NAME: &str = "AddMember";
 
         #[tokio::test]
@@ -138,7 +139,7 @@ mod tests {
         }
     }
 
-    mod map_strcuts {
+    mod map_structs {
         use std::{error::Error, sync::Arc};
 
         use ethers::types::U256;
@@ -148,10 +149,9 @@ mod tests {
                 deploy_contract, generate_fake_random_address, get_provider_with_signer,
                 ClientWithSigner, ALTERNATIVE_ACCOUNT_PRIVATE_KEY,
             },
-            week_5::mappings::MapStructs,
+            week_5::mappings::{tests::CONTRACT_PATH, MapStructs},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/MapStructs.sol";
         const CONTRACT_NAME: &str = "MapStructs";
 
         #[tokio::test]
@@ -319,10 +319,9 @@ mod tests {
                 ALTERNATIVE_ACCOUNT_ADDRESS, ALTERNATIVE_ACCOUNT_PRIVATE_KEY,
                 DEFAULT_ACCOUNT_ADDRESS,
             },
-            week_5::mappings::NestedMaps,
+            week_5::mappings::{tests::CONTRACT_PATH, NestedMaps},
         };
 
-        const CONTRACT_PATH: &str = "./src/week_5/contracts/NestedMaps.sol";
         const CONTRACT_NAME: &str = "NestedMaps";
 
         #[tokio::test]
