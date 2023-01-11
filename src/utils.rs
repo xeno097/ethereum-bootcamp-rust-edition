@@ -7,7 +7,7 @@ use ethers::{
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer, Wallet},
     solc::Solc,
-    types::{BlockId, BlockNumber, TransactionRequest, H160},
+    types::{BlockId, BlockNumber, TransactionRequest, H160, U256},
 };
 use k256::ecdsa::SigningKey;
 
@@ -164,6 +164,28 @@ pub async fn stop_impersonating_account(address: &str) -> Result<(), Box<dyn Err
     let raw_request = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"hardhat_stopImpersonatingAccount","params":["{address}"]}}"#,
     );
+
+    let _: String = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(raw_request)
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
+pub async fn skip_time(time: U256) -> Result<(), Box<dyn Error>> {
+    let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
+
+    let client = reqwest::Client::new();
+
+    let raw_request =
+        format!(r#"{{"jsonrpc":"2.0","id":1,"method":"evm_increaseTime","params":[{time}]}}"#,);
 
     let _: String = client
         .post(url)
