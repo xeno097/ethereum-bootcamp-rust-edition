@@ -2,7 +2,6 @@
 pragma solidity ^0.8.4;
 
 contract Switch {
-    
     address recipient;
     address owner;
     uint256 constant period = 52 weeks;
