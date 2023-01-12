@@ -13,8 +13,8 @@ contract MultiSig {
     }
 
     Transaction[] public transactions;
-    mapping(uint => mapping(address => bool)) public confirmations;
-    mapping(uint => uint) public confirmationsCounter;
+    mapping(uint256 => mapping(address => bool)) public confirmations;
+    mapping(uint256 => uint256) public confirmationsCounter;
     mapping(address => bool) isOwner;
 
     constructor(address[] memory _owners, uint256 _required) {
@@ -22,29 +22,28 @@ contract MultiSig {
         require(_required > 0);
         require(_owners.length > _required);
 
-        for (uint i =0;i< _owners.length;i++){
-            isOwner[_owners[i]]=true;
+        for (uint256 i = 0; i < _owners.length; i++) {
+            isOwner[_owners[i]] = true;
         }
-        
+
         owners = _owners;
         required = _required;
-
     }
 
-    function transactionCount() public view returns(uint256){
+    function transactionCount() public view returns (uint256) {
         return transactions.length;
     }
 
-    function submitTransaction(address _to, uint _value, bytes memory _data) external returns(uint256){
-        uint256 id = addTransaction(_to,_value,_data);
+    function submitTransaction(address _to, uint256 _value, bytes memory _data) external returns (uint256) {
+        uint256 id = addTransaction(_to, _value, _data);
 
         confirmTransaction(id);
 
         return id;
     }
 
-    function addTransaction(address _to, uint256 _value, bytes memory _data) internal returns(uint256){
-        transactions.push(Transaction(_to,_value,false, _data));
+    function addTransaction(address _to, uint256 _value, bytes memory _data) internal returns (uint256) {
+        transactions.push(Transaction(_to, _value, false, _data));
 
         return transactionCount() - 1;
     }
@@ -54,12 +53,12 @@ contract MultiSig {
         confirmations[_id][msg.sender] = true;
         confirmationsCounter[_id]++;
 
-        if(isConfirmed(_id)){
+        if (isConfirmed(_id)) {
             executeTransaction(_id);
         }
     }
 
-    function executeTransaction(uint transactionId) public {
+    function executeTransaction(uint256 transactionId) public {
         require(isOwner[msg.sender]);
         require(isConfirmed(transactionId));
 
@@ -74,20 +73,19 @@ contract MultiSig {
         require(ok);
     }
 
-    function getConfirmationsCount(uint transactionId) public view returns(uint256){
+    function getConfirmationsCount(uint256 transactionId) public view returns (uint256) {
         return confirmationsCounter[transactionId];
     }
 
-    function isConfirmed(uint transactionId) public view returns(bool){
+    function isConfirmed(uint256 transactionId) public view returns (bool) {
         return getConfirmationsCount(transactionId) == required;
     }
 
     receive() external payable {}
 }
 
-
 contract ERC20 {
-    uint public totalSupply;
+    uint256 public totalSupply;
     string public name = "SomeToken";
     string public symbol = "SMT";
     uint8 public decimals = 18;
@@ -101,15 +99,14 @@ contract ERC20 {
         balanceOf[msg.sender] = totalSupply;
     }
 
-    function transfer(address _to, uint _value) external returns(bool){
+    function transfer(address _to, uint256 _value) external returns (bool) {
         require(balanceOf[msg.sender] >= _value);
 
-        balanceOf[msg.sender]-=_value;
-        balanceOf[_to]+=_value;
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
 
-        emit Transfer(msg.sender,_to,_value);
+        emit Transfer(msg.sender, _to, _value);
 
         return true;
     }
-
 }

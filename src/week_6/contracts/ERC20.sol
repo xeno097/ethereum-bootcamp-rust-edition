@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 contract Token {
-    uint public totalSupply;
+    uint256 public totalSupply;
     string public name = "Name";
     string public symbol = "NME";
     uint8 public decimals = 18;
@@ -16,15 +16,14 @@ contract Token {
         balanceOf[msg.sender] = totalSupply;
     }
 
-    function transfer(address _to, uint _value) external returns(bool){
+    function transfer(address _to, uint256 _value) external returns (bool) {
         require(balanceOf[msg.sender] >= _value);
 
-        balanceOf[msg.sender]-=_value;
-        balanceOf[_to]+=_value;
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
 
-        emit Transfer(msg.sender,_to,_value);
+        emit Transfer(msg.sender, _to, _value);
 
         return true;
     }
-
 }

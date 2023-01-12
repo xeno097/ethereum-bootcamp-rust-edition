@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -77,20 +76,18 @@ interface IERC20 {
 }
 
 contract Chest {
-    
     function plunder(address[] calldata addresses) external {
-
-        for (uint i =0;i<addresses.length;i++){
-            IERC20 contractInstance = IERC20(addresses[i]); 
-            uint balance = contractInstance.balanceOf(address(this));
-            bool ok = contractInstance.transfer(msg.sender,balance);
+        for (uint256 i = 0; i < addresses.length; i++) {
+            IERC20 contractInstance = IERC20(addresses[i]);
+            uint256 balance = contractInstance.balanceOf(address(this));
+            bool ok = contractInstance.transfer(msg.sender, balance);
             require(ok);
         }
     }
 }
 
 contract ERC20 {
-    uint public totalSupply;
+    uint256 public totalSupply;
     string public name = "Name";
     string public symbol = "NME";
     uint8 public decimals = 18;
@@ -99,21 +96,19 @@ contract ERC20 {
 
     event Transfer(address from, address to, uint256 value);
 
-    constructor(uint _totalSupply) {
+    constructor(uint256 _totalSupply) {
         totalSupply = _totalSupply;
         balanceOf[msg.sender] = totalSupply;
     }
 
-    function transfer(address _to, uint _value) external returns(bool){
+    function transfer(address _to, uint256 _value) external returns (bool) {
         require(balanceOf[msg.sender] >= _value);
 
-        balanceOf[msg.sender]-=_value;
-        balanceOf[_to]+=_value;
+        balanceOf[msg.sender] -= _value;
+        balanceOf[_to] += _value;
 
-        emit Transfer(msg.sender,_to,_value);
+        emit Transfer(msg.sender, _to, _value);
 
         return true;
     }
-
 }
-
