@@ -1,7 +1,7 @@
 use ethers::prelude::abigen;
 
 abigen!(
-        ERC20,
+    ERC20,
     r#"[
         function name() external returns(string memory)
         function symbol() external returns(string memory)

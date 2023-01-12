@@ -13,8 +13,8 @@ The exercises are grouped by week and module under the `./src` folder. Modules' 
 - [x] [week-3: Ethereum](./src/week_3/)
 - [x] [week-4: Smart Contract Basics](./src/week_4/) (Includes final chapter challenges)
 - [x] [week-5: Solidity](./src/week_5/)
-- [ ] week-6: Solidity Core (not available yet)
-- [ ] week-7: Solidity Next Level (not available yet)
+- [x] [week-6: Solidity Core](./src/week_6/) (Does not include front end challenges)
+- [ ] week-7: Solidity Next Level (not started)
 
 ## Future Plans
 
