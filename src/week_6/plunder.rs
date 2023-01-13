@@ -80,12 +80,27 @@ mod tests {
 
         use ethers::types::U256;
 
-        use crate::week_6::plunder::tests::setup;
+        use crate::{
+            utils::ClientWithSigner,
+            week_6::plunder::{tests::setup, Chest, ERC20},
+        };
 
-        #[tokio::test]
-        async fn should_store_tokens_at_the_chest_address() -> Result<(), Box<dyn Error>> {
-            // Arrange
-            let (chest_contract_instance, _, erc_token_1_contract_instance, _) = setup().await?;
+        async fn setup_test() -> Result<
+            (
+                Chest<ClientWithSigner>,
+                Chest<ClientWithSigner>,
+                ERC20<ClientWithSigner>,
+                ERC20<ClientWithSigner>,
+                U256,
+            ),
+            Box<dyn Error>,
+        > {
+            let (
+                chest_contract_instance,
+                hunter_chest_contract_instance,
+                erc_token_1_contract_instance,
+                erc_token_2_contract_instance,
+            ) = setup().await?;
 
             let transfer_amount = U256::from(1000);
 
@@ -94,6 +109,21 @@ mod tests {
                 .send()
                 .await?
                 .await?;
+
+            Ok((
+                chest_contract_instance,
+                hunter_chest_contract_instance,
+                erc_token_1_contract_instance,
+                erc_token_2_contract_instance,
+                transfer_amount,
+            ))
+        }
+
+        #[tokio::test]
+        async fn should_store_tokens_at_the_chest_address() -> Result<(), Box<dyn Error>> {
+            // Arrange
+            let (chest_contract_instance, _, erc_token_1_contract_instance, _, transfer_amount) =
+                setup_test().await?;
 
             // Act
             let balance = erc_token_1_contract_instance
@@ -111,19 +141,12 @@ mod tests {
         async fn should_send_the_tokens_to_the_hunter() -> Result<(), Box<dyn Error>> {
             // Arrange
             let (
-                chest_contract_instance,
+                _,
                 hunter_chest_contract_instance,
                 erc_token_1_contract_instance,
                 _,
-            ) = setup().await?;
-
-            let transfer_amount = U256::from(1000);
-
-            erc_token_1_contract_instance
-                .transfer(chest_contract_instance.address(), transfer_amount)
-                .send()
-                .await?
-                .await?;
+                transfer_amount,
+            ) = setup_test().await?;
 
             // Act
             hunter_chest_contract_instance
@@ -146,18 +169,8 @@ mod tests {
         #[tokio::test]
         async fn should_remove_the_tokens_from_the_chest() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let (
-                chest_contract_instance,
-                hunter_chest_contract_instance,
-                erc_token_1_contract_instance,
-                _,
-            ) = setup().await?;
-
-            erc_token_1_contract_instance
-                .transfer(chest_contract_instance.address(), U256::from(1000))
-                .send()
-                .await?
-                .await?;
+            let (_, hunter_chest_contract_instance, erc_token_1_contract_instance, _, _) =
+                setup_test().await?;
 
             // Act
             hunter_chest_contract_instance
@@ -183,51 +196,22 @@ mod tests {
 
         use ethers::types::U256;
 
-        use crate::week_6::plunder::tests::setup;
+        use crate::{
+            utils::ClientWithSigner,
+            week_6::plunder::{tests::setup, Chest, ERC20},
+        };
 
-        #[tokio::test]
-        async fn should_store_tokens_at_the_chest_address() -> Result<(), Box<dyn Error>> {
-            // Arrange
-            let (
-                chest_contract_instance,
-                _,
-                erc_token_1_contract_instance,
-                erc_token_2_contract_instance,
-            ) = setup().await?;
-
-            let transfer_amount = U256::from(1000);
-
-            erc_token_1_contract_instance
-                .transfer(chest_contract_instance.address(), transfer_amount)
-                .send()
-                .await?
-                .await?;
-            erc_token_2_contract_instance
-                .transfer(chest_contract_instance.address(), transfer_amount)
-                .send()
-                .await?
-                .await?;
-
-            // Act
-            let balance_token_1 = erc_token_1_contract_instance
-                .balance_of(chest_contract_instance.address())
-                .call()
-                .await?;
-            let balance_token_2 = erc_token_2_contract_instance
-                .balance_of(chest_contract_instance.address())
-                .call()
-                .await?;
-
-            // Assert
-            assert_eq!(balance_token_1, transfer_amount);
-            assert_eq!(balance_token_2, transfer_amount);
-
-            Ok(())
-        }
-
-        #[tokio::test]
-        async fn should_send_the_tokens_to_the_hunter() -> Result<(), Box<dyn Error>> {
-            // Arrange
+        async fn setup_test() -> Result<
+            (
+                Chest<ClientWithSigner>,
+                Chest<ClientWithSigner>,
+                ERC20<ClientWithSigner>,
+                ERC20<ClientWithSigner>,
+                U256,
+                U256,
+            ),
+            Box<dyn Error>,
+        > {
             let (
                 chest_contract_instance,
                 hunter_chest_contract_instance,
@@ -248,6 +232,57 @@ mod tests {
                 .send()
                 .await?
                 .await?;
+
+            Ok((
+                chest_contract_instance,
+                hunter_chest_contract_instance,
+                erc_token_1_contract_instance,
+                erc_token_2_contract_instance,
+                transfer_amount_token_1,
+                transfer_amount_token_2,
+            ))
+        }
+
+        #[tokio::test]
+        async fn should_store_tokens_at_the_chest_address() -> Result<(), Box<dyn Error>> {
+            // Arrange
+            let (
+                chest_contract_instance,
+                _,
+                erc_token_1_contract_instance,
+                erc_token_2_contract_instance,
+                transfer_amount_token_1,
+                transfer_amount_token_2,
+            ) = setup_test().await?;
+
+            // Act
+            let balance_token_1 = erc_token_1_contract_instance
+                .balance_of(chest_contract_instance.address())
+                .call()
+                .await?;
+            let balance_token_2 = erc_token_2_contract_instance
+                .balance_of(chest_contract_instance.address())
+                .call()
+                .await?;
+
+            // Assert
+            assert_eq!(balance_token_1, transfer_amount_token_1);
+            assert_eq!(balance_token_2, transfer_amount_token_2);
+
+            Ok(())
+        }
+
+        #[tokio::test]
+        async fn should_send_the_tokens_to_the_hunter() -> Result<(), Box<dyn Error>> {
+            // Arrange
+            let (
+                _,
+                hunter_chest_contract_instance,
+                erc_token_1_contract_instance,
+                erc_token_2_contract_instance,
+                transfer_amount_token_1,
+                transfer_amount_token_2,
+            ) = setup_test().await?;
 
             // Act
             hunter_chest_contract_instance
@@ -279,25 +314,13 @@ mod tests {
         async fn should_remove_the_tokens_from_the_chest() -> Result<(), Box<dyn Error>> {
             // Arrange
             let (
-                chest_contract_instance,
+                _,
                 hunter_chest_contract_instance,
                 erc_token_1_contract_instance,
                 erc_token_2_contract_instance,
-            ) = setup().await?;
-
-            let transfer_amount_token_1 = U256::from(250);
-            let transfer_amount_token_2 = U256::from(300);
-
-            erc_token_1_contract_instance
-                .transfer(chest_contract_instance.address(), transfer_amount_token_1)
-                .send()
-                .await?
-                .await?;
-            erc_token_2_contract_instance
-                .transfer(chest_contract_instance.address(), transfer_amount_token_2)
-                .send()
-                .await?
-                .await?;
+                _,
+                _,
+            ) = setup_test().await?;
 
             // Act
             hunter_chest_contract_instance
