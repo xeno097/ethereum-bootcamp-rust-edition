@@ -26,9 +26,52 @@ abigen!(
 // Note: some tests have been omitted because only the completed exercise is tested here
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
+
+    use ethers::{
+        providers::Middleware,
+        types::{H160, U256},
+    };
+
+    use crate::utils::{deploy_contract, get_provider, ClientWithSigner};
+
+    use super::MultiSig;
 
     const CONTRACT_PATH: &str = "./src/week_6/contracts/MultiSignatureWallet.sol";
     const CONTRACT_NAME: &str = "MultiSig";
+
+    async fn setup(
+    ) -> Result<(MultiSig<ClientWithSigner>, H160, H160, H160, H160, U256), Box<dyn Error>> {
+        let provider = get_provider();
+        let accounts = provider.get_accounts().await?;
+        let expected_required = U256::from(2);
+
+        let first_owner = accounts[0];
+        let second_owner = accounts[1];
+        let third_owner = accounts[2];
+        let invalid_account = accounts[4];
+
+        let owners_count = 3;
+        let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
+
+        let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
+            CONTRACT_PATH,
+            CONTRACT_NAME,
+            (accounts.clone(), expected_required),
+            None,
+        )
+        .await?
+        .into();
+
+        Ok((
+            contract_instance,
+            first_owner,
+            second_owner,
+            third_owner,
+            invalid_account,
+            expected_required,
+        ))
+    }
 
     mod constructor {
         use std::error::Error;
@@ -41,7 +84,7 @@ mod tests {
         use crate::{
             utils::{deploy_contract, get_provider, ClientWithSigner},
             week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
+                tests::{setup, CONTRACT_NAME, CONTRACT_PATH},
                 MultiSig,
             },
         };
@@ -79,21 +122,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_the_number_of_confirmations() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-            let expected_required = U256::from(2);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), expected_required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, _, _, _, expected_required) = setup().await?;
 
             // Act
             let required = contract_instance.required().call().await?;
@@ -199,7 +228,7 @@ mod tests {
         use crate::{
             utils::{deploy_contract, get_provider, ClientWithSigner, ALTERNATIVE_ACCOUNT_ADDRESS},
             week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
+                tests::{setup, CONTRACT_NAME, CONTRACT_PATH},
                 MultiSig,
             },
         };
@@ -207,24 +236,9 @@ mod tests {
         #[tokio::test]
         async fn should_create_a_new_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-            let required = U256::from(2);
-
-            let expected_to = ALTERNATIVE_ACCOUNT_ADDRESS.parse::<Address>()?;
             let expected_value = U256::from(10);
 
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, expected_to, _, _, _) = setup().await?;
 
             // Act
             contract_instance
@@ -298,40 +312,15 @@ mod tests {
     mod confirm_security {
         use std::error::Error;
 
-        use ethers::{
-            providers::Middleware,
-            types::{Address, Bytes, H160, U256},
-        };
+        use ethers::types::{Bytes, U256};
 
-        use crate::{
-            utils::{deploy_contract, get_provider, ClientWithSigner, ALTERNATIVE_ACCOUNT_ADDRESS},
-            week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                MultiSig,
-            },
-        };
+        use crate::week_6::multi_signature_wallet::tests::setup;
 
         #[tokio::test]
         async fn should_confirm_the_transaction() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-            let required = U256::from(2);
-
-            let expected_to = ALTERNATIVE_ACCOUNT_ADDRESS.parse::<Address>()?;
             let expected_value = U256::from(10);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, expected_to, _, _, _) = setup().await?;
 
             // Act
             contract_instance
@@ -362,42 +351,22 @@ mod tests {
         use std::{error::Error, sync::Arc};
 
         use ethers::{
-            providers::{Http, Middleware, Provider},
-            types::{Address, Bytes, H160, U256},
+            providers::{Http, Provider},
+            types::{Bytes, U256},
         };
 
         use crate::{
-            utils::{deploy_contract, get_provider, ClientWithSigner, ALTERNATIVE_ACCOUNT_ADDRESS},
-            week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                MultiSig,
-            },
+            utils::get_provider,
+            week_6::multi_signature_wallet::{tests::setup, MultiSig},
         };
 
         #[tokio::test]
         async fn should_not_confirm_the_transaction_from_an_invalid_address(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let invalid_account = accounts[4];
-            let required = U256::from(2);
-
-            let expected_to = ALTERNATIVE_ACCOUNT_ADDRESS.parse::<Address>()?;
             let expected_value = U256::from(10);
 
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, expected_to, _, invalid_account, _) = setup().await?;
 
             contract_instance
                 .submit_transaction(
@@ -432,40 +401,19 @@ mod tests {
     mod receive {
         use std::error::Error;
 
-        use ethers::{
-            providers::Middleware,
-            types::{H160, U256},
-            utils::parse_ether,
-        };
+        use ethers::{providers::Middleware, utils::parse_ether};
 
         use crate::{
-            utils::{deploy_contract, get_provider_with_signer, send_ether, ClientWithSigner},
-            week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                MultiSig,
-            },
+            utils::{get_provider_with_signer, send_ether},
+            week_6::multi_signature_wallet::tests::setup,
         };
 
         #[tokio::test]
         async fn should_accept_funds() -> Result<(), Box<dyn Error>> {
             // Arrange
             let provider = get_provider_with_signer(None, None);
-            let accounts = provider.get_accounts().await?;
-            let required = U256::from(2);
-
             let expected_value = parse_ether(3)?;
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, _, _, _, _) = setup().await?;
 
             // Act
             send_ether(
@@ -490,39 +438,20 @@ mod tests {
         use std::{error::Error, sync::Arc};
 
         use ethers::{
-            providers::{Http, Middleware, Provider},
-            types::{Bytes, H160, U256},
+            providers::{Http, Provider},
+            types::{Bytes, U256},
         };
 
         use crate::{
-            utils::{deploy_contract, get_provider, send_ether, ClientWithSigner},
-            week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                MultiSig,
-            },
+            utils::{get_provider, send_ether},
+            week_6::multi_signature_wallet::{tests::setup, MultiSig},
         };
 
         #[tokio::test]
         async fn should_return_false_if_the_transaction_is_not_confirmed(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let to = accounts[1];
-            let required = U256::from(2);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, to, _, _, _) = setup().await?;
 
             contract_instance
                 .submit_transaction(
@@ -552,23 +481,7 @@ mod tests {
         async fn should_return_true_if_the_transaction_is_confirmed() -> Result<(), Box<dyn Error>>
         {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let second_owner = accounts[1];
-            let required = U256::from(2);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, second_owner, _, _, _) = setup().await?;
 
             contract_instance
                 .submit_transaction(
@@ -618,38 +531,19 @@ mod tests {
 
         use ethers::{
             providers::{Http, Middleware, Provider},
-            types::{Bytes, H160, U256},
+            types::{Bytes, U256},
         };
 
         use crate::{
-            utils::{deploy_contract, get_provider, send_ether, ClientWithSigner},
-            week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                MultiSig,
-            },
+            utils::{get_provider, send_ether},
+            week_6::multi_signature_wallet::{tests::setup, MultiSig},
         };
 
         #[tokio::test]
         async fn should_not_execute_a_transaction_if_confirmation_threshold_is_not_met(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let to = accounts[1];
-            let required = U256::from(2);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, _, to, _, _) = setup().await?;
 
             contract_instance
                 .submit_transaction(
@@ -676,25 +570,8 @@ mod tests {
         #[tokio::test]
         async fn should_send_the_funds_to_the_beneficiary() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let second_owner = accounts[1];
-            let to = accounts[2];
-            let required = U256::from(2);
+            let (contract_instance, _, second_owner, to, _, _) = setup().await?;
             let tranfer_eth = U256::from(1);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
 
             contract_instance
                 .submit_transaction(
@@ -743,39 +620,21 @@ mod tests {
 
         use ethers::{
             prelude::encode_function_data,
-            providers::{Http, Middleware, Provider},
-            types::{H160, U256},
+            providers::{Http, Provider},
+            types::U256,
         };
 
         use crate::{
             utils::{deploy_contract, get_provider, ClientWithSigner},
             week_6::multi_signature_wallet::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
+                tests::{setup, CONTRACT_PATH},
                 MultiSig, ERC20,
             },
         };
 
         #[tokio::test]
         async fn should_send_the_funds_to_the_beneficiary() -> Result<(), Box<dyn Error>> {
-            // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let second_owner = accounts[1];
-            let to = accounts[2];
-            let required = U256::from(2);
-
-            let owners_count = 3;
-            let accounts: Vec<H160> = accounts.into_iter().take(owners_count).collect();
-
-            let contract_instance: MultiSig<ClientWithSigner> = deploy_contract(
-                CONTRACT_PATH,
-                CONTRACT_NAME,
-                (accounts.clone(), required),
-                None,
-            )
-            .await?
-            .into();
+            let (contract_instance, _, second_owner, to, _, _) = setup().await?;
 
             let erc20_contract_instance: ERC20<ClientWithSigner> =
                 deploy_contract(CONTRACT_PATH, "ERC20", (), None)
