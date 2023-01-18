@@ -14,7 +14,7 @@ The exercises are grouped by week and module under the `./src` folder. Modules' 
 - [x] [week-4: Smart Contract Basics](./src/week_4/) (Includes final chapter challenges)
 - [x] [week-5: Solidity](./src/week_5/)
 - [x] [week-6: Solidity Core](./src/week_6/) (Does not include front end challenges)
-- [ ] week-7: Solidity Next Level (not started)
+- [x] [week-7: Solidity Next Level](./src/week_7/) (Does not include upgradable contract exercises)
 
 ## Future Plans
 
