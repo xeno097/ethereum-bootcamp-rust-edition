@@ -21,40 +21,72 @@ abigen!(
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
+
+    use ethers::{
+        providers::Middleware,
+        types::{Bytes, H160},
+    };
+
+    use crate::utils::{
+        deploy_contract, generate_fake_random_address, get_provider, ClientWithSigner,
+    };
+
+    use super::Voting;
 
     const CONTRACT_PATH: &str = "./src/week_7/contracts/VotingContract.sol";
     const CONTRACT_NAME: &str = "Voting";
 
+    async fn setup(
+        accounts: Option<Vec<H160>>,
+    ) -> Result<(Voting<ClientWithSigner>, Vec<H160>), Box<dyn Error>> {
+        let accounts = if accounts.is_none() {
+            let provider = get_provider();
+            provider.get_accounts().await?
+        } else {
+            accounts.unwrap()
+        };
+
+        let contract_instance: Voting<ClientWithSigner> =
+            deploy_contract(CONTRACT_PATH, CONTRACT_NAME, accounts.clone(), None)
+                .await?
+                .into();
+
+        Ok((contract_instance, accounts))
+    }
+
+    async fn setup_with_proposal_creation(
+        target: Option<H160>,
+        calldata: Option<Bytes>,
+        accounts: Option<Vec<H160>>,
+    ) -> Result<(Voting<ClientWithSigner>, Vec<H160>), Box<dyn Error>> {
+        let (contract_instance, accounts) = setup(accounts).await?;
+
+        let target_address = target.unwrap_or_else(|| generate_fake_random_address());
+        let calldata = calldata.unwrap_or_else(|| Bytes {
+            ..Default::default()
+        });
+
+        contract_instance
+            .new_proposal(target_address, calldata)
+            .send()
+            .await?
+            .await?;
+
+        Ok((contract_instance, accounts))
+    }
+
     mod proposal {
         use std::error::Error;
 
-        use ethers::{
-            providers::Middleware,
-            types::{Bytes, H160, U256},
-        };
+        use ethers::types::{Bytes, U256};
 
-        use crate::{
-            utils::{
-                deploy_contract, generate_fake_random_address, get_provider, ClientWithSigner,
-            },
-            week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                Voting,
-            },
-        };
+        use crate::{utils::generate_fake_random_address, week_7::voting_contract::tests::setup};
 
         #[tokio::test]
         async fn should_successfully_create_a_proposal() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let voters: Vec<H160> = accounts.into_iter().take(3).collect();
-
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, voters, None)
-                    .await?
-                    .into();
+            let (contract_instance, _) = setup(None).await?;
 
             let target_address = generate_fake_random_address();
             let empty_calldata = Bytes {
@@ -84,46 +116,23 @@ mod tests {
         use std::{error::Error, sync::Arc};
 
         use ethers::{
-            providers::{Http, Middleware, Provider},
-            types::{Bytes, H160, U256},
+            providers::{Http, Provider},
+            types::U256,
         };
 
         use crate::{
-            utils::{
-                deploy_contract, generate_fake_random_address, get_provider, ClientWithSigner,
-            },
-            week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                Voting,
-            },
+            utils::get_provider,
+            week_7::voting_contract::{tests::setup_with_proposal_creation, Voting},
         };
 
         #[tokio::test]
-        async fn should_successfully_create_a_proposal() -> Result<(), Box<dyn Error>> {
+        async fn should_cast_3_votes() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let voters: Vec<H160> = accounts.into_iter().take(3).collect();
-
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, voters.clone(), None)
-                    .await?
-                    .into();
-
-            let target_address = generate_fake_random_address();
-            let empty_calldata = Bytes {
-                ..Default::default()
-            };
-
-            contract_instance
-                .new_proposal(target_address, empty_calldata.clone())
-                .send()
-                .await?
-                .await?;
+            let (contract_instance, voters) =
+                setup_with_proposal_creation(None, None, None).await?;
 
             // Act
-            for (idx, address) in voters.into_iter().enumerate() {
+            for (idx, address) in voters.into_iter().take(3).enumerate() {
                 let contract_instance: Voting<Provider<Http>> = contract_instance
                     .connect(Arc::new(get_provider().with_sender(address)))
                     .into();
@@ -148,35 +157,15 @@ mod tests {
     mod multiples_votes {
         use std::error::Error;
 
-        use ethers::types::{Bytes, H160, U256};
+        use ethers::types::U256;
 
-        use crate::{
-            utils::{deploy_contract, generate_fake_random_address, ClientWithSigner},
-            week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                Voting,
-            },
-        };
+        use crate::week_7::voting_contract::tests::setup_with_proposal_creation;
 
         #[tokio::test]
         async fn should_successfully_cast_multiple_votes_but_only_increment_the_yes_counter_by_1(
         ) -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, Vec::<H160>::new(), None)
-                    .await?
-                    .into();
-
-            let target_address = generate_fake_random_address();
-            let empty_calldata = Bytes {
-                ..Default::default()
-            };
-
-            contract_instance
-                .new_proposal(target_address, empty_calldata.clone())
-                .send()
-                .await?
-                .await?;
+            let (contract_instance, _) = setup_with_proposal_creation(None, None, None).await?;
 
             // Act
             for idx in 0..3 {
@@ -200,23 +189,20 @@ mod tests {
     mod voting_events {
         use std::error::Error;
 
-        use ethers::types::{Bytes, TransactionReceipt, H160, U256};
+        use ethers::types::{Bytes, TransactionReceipt, U256};
 
         use crate::{
-            utils::{deploy_contract, generate_fake_random_address, ClientWithSigner},
+            utils::generate_fake_random_address,
             week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                Voting, VotingEvents,
+                tests::{setup, setup_with_proposal_creation},
+                VotingEvents,
             },
         };
 
         #[tokio::test]
         async fn should_emit_the_proposal_created_event() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, Vec::<H160>::new(), None)
-                    .await?
-                    .into();
+            let (contract_instance, _) = setup(None).await?;
 
             let target_address = generate_fake_random_address();
             let empty_calldata = Bytes {
@@ -250,21 +236,7 @@ mod tests {
         #[tokio::test]
         async fn should_emit_the_vote_cast_event() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, Vec::<H160>::new(), None)
-                    .await?
-                    .into();
-
-            let target_address = generate_fake_random_address();
-            let empty_calldata = Bytes {
-                ..Default::default()
-            };
-
-            contract_instance
-                .new_proposal(target_address, empty_calldata.clone())
-                .send()
-                .await?
-                .await?;
+            let (contract_instance, _) = setup_with_proposal_creation(None, None, None).await?;
 
             // Act
             let tx_receipt: TransactionReceipt = contract_instance
@@ -297,17 +269,12 @@ mod tests {
 
         use ethers::{
             providers::{Http, Middleware, Provider},
-            types::{Bytes, H160, U256},
+            types::{H160, U256},
         };
 
         use crate::{
-            utils::{
-                deploy_contract, generate_fake_random_address, get_provider, ClientWithSigner,
-            },
-            week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
-                Voting,
-            },
+            utils::get_provider,
+            week_7::voting_contract::{tests::setup_with_proposal_creation, Voting},
         };
 
         #[tokio::test]
@@ -319,22 +286,8 @@ mod tests {
 
             let non_member = accounts[2];
 
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, Vec::<H160>::new(), None)
-                    .await?
-                    .into();
-
-            let target_address = generate_fake_random_address();
-            let empty_calldata = Bytes {
-                ..Default::default()
-            };
-
-            contract_instance
-                .new_proposal(target_address, empty_calldata.clone())
-                .send()
-                .await?
-                .await?
-                .unwrap();
+            let (contract_instance, _) =
+                setup_with_proposal_creation(None, None, Some(Vec::<H160>::new())).await?;
 
             let contract_instance: Voting<Provider<Http>> = contract_instance
                 .connect(Arc::new(get_provider().with_sender(non_member)))
@@ -358,14 +311,14 @@ mod tests {
 
         use ethers::{
             prelude::encode_function_data,
-            providers::{Http, Middleware, Provider},
+            providers::{Http, Provider},
             types::U256,
         };
 
         use crate::{
             utils::{deploy_contract, get_provider, ClientWithSigner},
             week_7::voting_contract::{
-                tests::{CONTRACT_NAME, CONTRACT_PATH},
+                tests::{setup_with_proposal_creation, CONTRACT_PATH},
                 DummyExecutor, Voting,
             },
         };
@@ -373,30 +326,19 @@ mod tests {
         #[tokio::test]
         async fn should_execute_after_voting_10_times() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let provider = get_provider();
-            let accounts = provider.get_accounts().await?;
-
-            let contract_instance: Voting<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, CONTRACT_NAME, accounts.clone(), None)
-                    .await?
-                    .into();
-
             let dummy_instance: DummyExecutor<ClientWithSigner> =
                 deploy_contract(CONTRACT_PATH, "DummyExecutor", (), None)
                     .await?
                     .into();
 
-            let f = dummy_instance.abi().function("mint")?;
-
             let expected_mint_amount = U256::from(256);
-            let calldata = encode_function_data(f, expected_mint_amount)?;
 
-            contract_instance
-                .new_proposal(dummy_instance.address(), calldata)
-                .send()
-                .await?
-                .await?
-                .unwrap();
+            let mint_function = dummy_instance.abi().function("mint")?;
+            let calldata = encode_function_data(mint_function, expected_mint_amount)?;
+
+            let (contract_instance, accounts) =
+                setup_with_proposal_creation(Some(dummy_instance.address()), Some(calldata), None)
+                    .await?;
 
             // Act
             for account in accounts {
