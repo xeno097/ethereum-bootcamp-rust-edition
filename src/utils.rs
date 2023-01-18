@@ -133,6 +133,41 @@ pub fn compile_contract(
 }
 
 #[allow(dead_code)]
+pub async fn deploy_contract_with_library<T: Tokenize>(
+    library_path: &str,
+    library_name: &str,
+    contract_path: &str,
+    contract_name: &str,
+    arguments: T,
+    library_address: H160,
+) -> Result<Contract<ClientWithSigner>, Box<dyn Error>> {
+    let signer = get_provider_with_signer(None, None);
+
+    let compiled = Solc::default().compile_source(contract_path)?;
+    let contract = compiled
+        .get(contract_path, contract_name)
+        .expect("could not find contract");
+
+    let mut bytecode = contract.bin.unwrap().clone();
+
+    // Replace the library placeholder in the unlinked bytecode
+    let linked_bytecode = bytecode
+        .link(library_path, library_name, library_address)
+        .resolve()
+        .unwrap();
+
+    let contract_factory = ContractFactory::new(
+        contract.abi.unwrap().clone(),
+        linked_bytecode.clone(),
+        std::sync::Arc::new(signer),
+    );
+
+    let contract_instance = contract_factory.clone().deploy(arguments)?.send().await?;
+
+    Ok(contract_instance)
+}
+
+#[allow(dead_code)]
 pub async fn start_impersonating_account(address: &str) -> Result<(), Box<dyn Error>> {
     let url = std::env::var("RPC_URL").unwrap_or_else(|_| "http://localhost:8545".to_string());
 
