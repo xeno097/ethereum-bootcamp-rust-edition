@@ -81,12 +81,12 @@ mod tests {
         };
 
         const CONTRACT_NAME: &str = "Game";
+        const LIBRARY_NAME: &str = "UIntFunctions";
 
         #[tokio::test]
         async fn should_set_correctly_the_participants_property() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let library_instance =
-                deploy_contract(CONTRACT_PATH, "UIntFunctions", (), None).await?;
+            let library_instance = deploy_contract(CONTRACT_PATH, LIBRARY_NAME, (), None).await?;
 
             let test_cases = vec![
                 U256::from(2),
@@ -100,7 +100,7 @@ mod tests {
             for value in test_cases {
                 let contract_instance: Game<ClientWithSigner> = deploy_contract_with_library(
                     CONTRACT_PATH,
-                    "UIntFunctions",
+                    LIBRARY_NAME,
                     CONTRACT_PATH,
                     CONTRACT_NAME,
                     value,
@@ -122,8 +122,7 @@ mod tests {
         #[tokio::test]
         async fn should_set_correctly_the_allow_teams_property() -> Result<(), Box<dyn Error>> {
             // Arrange
-            let library_instance =
-                deploy_contract(CONTRACT_PATH, "UIntFunctions", (), None).await?;
+            let library_instance = deploy_contract(CONTRACT_PATH, LIBRARY_NAME, (), None).await?;
 
             let test_cases = vec![
                 (U256::from(2), true),
@@ -137,7 +136,7 @@ mod tests {
             for (value, expected_value) in test_cases {
                 let contract_instance: Game<ClientWithSigner> = deploy_contract_with_library(
                     CONTRACT_PATH,
-                    "UIntFunctions",
+                    LIBRARY_NAME,
                     CONTRACT_PATH,
                     CONTRACT_NAME,
                     value,
@@ -251,18 +250,19 @@ mod tests {
         };
 
         const CONTRACT_NAME: &str = "PrimeGame";
+        const LIBRARY_NAME: &str = "Prime";
 
         #[tokio::test]
         async fn should_correctly_determine_a_winner() -> Result<(), Box<dyn Error>> {
             // Arrange
             let library_instance: Prime<ClientWithSigner> =
-                deploy_contract(CONTRACT_PATH, "Prime", (), None)
+                deploy_contract(CONTRACT_PATH, LIBRARY_NAME, (), None)
                     .await?
                     .into();
 
             let contract_instance: PrimeGame<ClientWithSigner> = deploy_contract_with_library(
                 CONTRACT_PATH,
-                "Prime",
+                LIBRARY_NAME,
                 CONTRACT_PATH,
                 CONTRACT_NAME,
                 (),
